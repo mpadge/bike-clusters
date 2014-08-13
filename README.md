@@ -17,6 +17,7 @@ London's system, with sample data provided.
 
 3. Run >./getr2 to compute pairwise inter-station correlations from observed ride
    data. Also makes the following ./results files:
+
 - ntrips = Matrix of (double) numbers of trips per day between each pair of stations
 - results_list = Table with 1 row for each station of all summary data
 - results_st_latlons = Just the lat-lon coordinates of each station
