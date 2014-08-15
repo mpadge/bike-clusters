@@ -92,9 +92,6 @@ ivec allocateClusters (int num_clusters, dmat* st_dists,
                 // cluster_num.
                 for (int j=0; j<nstations; j++) {
                     if (cluster_ids (j) > INT_MIN && (*st_dists) (i, j) < tempd) {
-                        //std::cout << "[" << i << "] cluster_ids [" << j << "] = " <<
-                        //    cluster_ids (j) << " with D = " << (*st_dists) (i,j) <<
-                        //    std::endl;
                         tempd = (*st_dists) (i, j);
                         tempi = j;
                     }
