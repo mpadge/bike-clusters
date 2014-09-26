@@ -1,41 +1,28 @@
 CC=g++
 CFLAGS=-c
-LIBS=
+LIBS=-lboost_system
 VPATH=./src
-OBJECTS = NeutralClusters.o Utils.o InOut.o DataProcessing.o Calculations.o
+OBJECTS1 = NeutralClusters.o Utils.o InOut.o DataProcessing.o Calculations.o
+OBJECTS2 = GetR2Mats.o Utils.o InOut.o DataProcessing.o Calculations.o
+OBJECTS3 = Clusters.o Utils.o InOut.o DataProcessing.o Calculations.o
+
+%.o: %.c++
+	$(CC) $(CFLAGS) $<
 
 all: ncl
 
-ncl: $(OBJECTS)
-	$(CC) $(OBJECTS) -o $(LIBS) NeutralClusters
-
-$(BUILDDIR)/%.o: $(BUILDDIR)/%.c++
-	$(CC) $(CFLAGS) $@ $< -o
-
-clean:
-	rm -f *.o 
-
-# ---------------------------------------------------
-
-OBJECTS2 = GetR2Mats.o Utils.o InOut.o DataProcessing.o Calculations.o
+ncl: $(OBJECTS1)
+	$(CC) $(OBJECTS1) $(LIBS) -o NeutralClusters
 
 getr2: GetR2Mats
 
 GetR2Mats: $(OBJECTS2)
-	$(CC) $(OBJECTS2) -o $(LIBS) getr2
-
-%.o: %.c++
-	$(CC) $(CFLAGS) $<
-
-# ---------------------------------------------------
-
-OBJECTS3 = Clusters.o Utils.o InOut.o DataProcessing.o Calculations.o
+	$(CC) $(OBJECTS2) $(LIBS) -o getr2
 
 clusters: Clusters
 
 Clusters: $(OBJECTS3)
-	$(CC) $(OBJECTS3) -o $(LIBS) Clusters
+	$(CC) $(OBJECTS3) $(LIBS) -o Clusters
 
-%.o: %.c++
-	$(CC) $(CFLAGS) $<
-
+clean:
+	rm -f *.o 

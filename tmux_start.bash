@@ -30,6 +30,8 @@ tmux send-keys -t $SESSION:3 'vim Calculations.h' C-m
 tmux send-keys -t $SESSION:3 ':' 'tabe Calculations.c++' C-m
 
 tmux split-window -h
+tmux send-keys -t $SESSION:3 'vim GetR2Mats.h' C-m
+tmux send-keys -t $SESSION:3 ':' 'tabe GetR2Mats.c++' C-m
 tmux select-pane -t 0
 
 cd ..
