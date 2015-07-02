@@ -17,26 +17,26 @@ ivec allocateClusters (int num_clusters, dmat* st_dists,
         base_generator_type*  generator)
 {
     /*
-     * Initially allocates num_clusters random points to cluster seeds. Routine then
-     * proceeds by (1) selecting a random point from among the non-allocated points;
-     * (2) finding closest allocated point to that point; (3) Finding closest
-     * unallocated point to this allocated point (which may or may not be the first
-     * point); and (4) allocating this point to the cluster of the point identified
-     * in step#2. The computational order is thus a few times N, whereas
-     * constructing clusters by expanding from random points on the boundaries of
-     * allocated points is comparably way more computationally complex, and not
-     * worth doing. 
+     * Initially allocates num_clusters random points to cluster seeds. Routine
+     * then proceeds by (1) selecting a random point from among the
+     * non-allocated points; (2) finding closest allocated point to that point;
+     * (3) Finding closest unallocated point to this allocated point (which may
+     * or may not be the first point); and (4) allocating this point to the
+     * cluster of the point identified in step#2. The computational order is
+     * thus a few times N, whereas constructing clusters by expanding from
+     * random points on the boundaries of allocated points is comparably way
+     * more computationally complex, and not worth doing. 
      *
-     * NOTE, however, that although this works as outlined, it does produce clusters
-     * of very unequal sizes, very often with just one or two clusters having most
-     * points, yet others having very, very few points. This arises because as a
-     * cluster grows bigger, it becomes proportionately more likely to contain the
-     * closest point to any randomly selected point. Growth rates are thus
-     * proportional to sizes. The remedy employed here is to grow clusters perfectly
-     * evenly by selecting the cluster of the smallest size, and then finding a
-     * random point that is closer to that cluster than to any other. Only if this
-     * condition fails does the routine revert to simply random point selection
-     * regardless of cluster ID.
+     * NOTE, however, that although this works as outlined, it does produce
+     * clusters of very unequal sizes, very often with just one or two clusters
+     * having most points, yet others having very, very few points. This arises
+     * because as a cluster grows bigger, it becomes proportionately more likely
+     * to contain the closest point to any randomly selected point. Growth rates
+     * are thus proportional to sizes. The remedy employed here is to grow
+     * clusters perfectly evenly by selecting the cluster of the smallest size,
+     * and then finding a random point that is closer to that cluster than to
+     * any other. Only if this condition fails does the routine revert to simply
+     * random point selection regardless of cluster ID.
      */
     int nstations = (*st_dists).size1 (); 
     int tempi, nearest_in, count [2], this_cluster;
@@ -219,6 +219,9 @@ distStats calcClusterDists (int nc, ivec cluster_ids, dmat* st_dists, dmat* ntri
 double vectorAnalyses (vectorData *vec_data, dmat ntrips, stnData station_data, 
         dvec *lons, dvec *lats, dmat *st_dists)
 {
+    /*
+     * Calculuates pair-wise correlations in trip numbers between all stations.
+     */
     double tempd;
     RegrResults regr1, regr2;
     std::vector <double> vec_fromA, vec_toA, vec_fromB, vec_toB;
@@ -233,13 +236,19 @@ double vectorAnalyses (vectorData *vec_data, dmat ntrips, stnData station_data,
     (*vec_data).r2from.resize (0);
     (*vec_data).r2to.resize (0);
 
-    for (int i=0; i<station_data.nstations; i++) {
-        (*vec_data).r2from_mat (i, i) = (*vec_data).r2to_mat (i, i) = DOUBLE_MIN;
+    for (int i=0; i<station_data.nstations; i++) 
+    {
+        (*vec_data).r2from_mat (i, i) = DOUBLE_MIN;
+        (*vec_data).r2to_mat (i, i) = DOUBLE_MIN;
     }
-    for (int i=0; i<(station_data.nstations - 1); i++) {
-        for (int j=(i + 1); j<station_data.nstations; j++) {
-            (*vec_data).r2from_mat (i, j) = (*vec_data).r2from_mat (j, i) = 
-                (*vec_data).r2to_mat (i, j) = (*vec_data).r2to_mat (j, i) = DOUBLE_MIN;
+    for (int i=0; i<(station_data.nstations - 1); i++) 
+    {
+        for (int j=(i + 1); j<station_data.nstations; j++) 
+        {
+            (*vec_data).r2from_mat (i, j) = DOUBLE_MIN;
+            (*vec_data).r2from_mat (j, i) = DOUBLE_MIN;
+            (*vec_data).r2to_mat (i, j) = DOUBLE_MIN;
+            (*vec_data).r2to_mat (j, i) = DOUBLE_MIN;
         }
     }
 
@@ -268,11 +277,11 @@ double vectorAnalyses (vectorData *vec_data, dmat ntrips, stnData station_data,
                 if (!isnan (regr1.r2) && !isnan (regr2.r2)) {
                     count++;
                     (*vec_data).r2from.push_back (regr1.r2);
-                    (*vec_data).r2from_mat (i, j) = 
-                        (*vec_data).r2from_mat (j, i) = regr1.r2;
+                    (*vec_data).r2from_mat (i, j) = regr1.r2;
+                    (*vec_data).r2from_mat (j, i) = regr1.r2;
                     (*vec_data).r2to.push_back (regr2.r2);
-                    (*vec_data).r2to_mat (i, j) = 
-                        (*vec_data).r2to_mat (j, i) = regr2.r2;
+                    (*vec_data).r2to_mat (i, j) = regr2.r2;
+                    (*vec_data).r2to_mat (j, i) = regr2.r2;
                     (*vec_data).ivec.push_back (i);
                     (*vec_data).jvec.push_back (j);
                     (*vec_data).lonveci.push_back ((*lons) (i));
