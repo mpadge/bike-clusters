@@ -1,6 +1,6 @@
 /***************************************************************************
  *  Project:    BikeClusters
- *  File:       Utils.h
+ *  File:       ClusterCalculations.h
  *  Language:   C++
  *
  *  BikeClusters is free software: you can redistribute it and/or modify it
@@ -58,61 +58,43 @@
  *  Compiler Options:   -std=c++11
  ***************************************************************************/
 
-#include <stdlib.h> // has abs function
-#include <math.h>
-#include <iostream>
-#include <stdio.h>
-#include <time.h>
-#include <limits.h>
-#include <vector>
-#include <string>
-#include <iomanip> // for setfill
-#include <sys/ioctl.h> // for console width: Linux only!
-#include <ctype.h>
-#include <fstream>
-#include <assert.h>
 
-#include <boost/config.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
+#ifndef CALCULATIONS_H
+#define CALCULATIONS_H
 
-#include <boost/random/linear_congruential.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/uniform_real.hpp>
-
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/dijkstra_shortest_paths.hpp>
-#include <boost/property_map/property_map.hpp>
-
-#ifndef UTILS_H
-#define UTILS_H
-
-#define PI 3.1415926535897932384626433832795
-
-typedef boost::numeric::ublas::vector <int> ivec;
-typedef boost::numeric::ublas::matrix <int> imat;
-typedef boost::numeric::ublas::vector <double> dvec;
-typedef boost::numeric::ublas::matrix <double> dmat;
-typedef boost::numeric::ublas::vector <bool> bvec;
-typedef boost::numeric::ublas::matrix <bool> bmat;
-typedef boost::numeric::ublas::zero_matrix <double> zmat_d;
-typedef boost::numeric::ublas::zero_matrix <int> zmat_i;
-
-const double DOUBLE_MAX = std::numeric_limits<double>::max (),
-    DOUBLE_MIN = -DOUBLE_MAX,
-    FLOAT_MAX = std::numeric_limits <float>::max ();
+#include "Utils.h"
+#include "ClusterData.h"
 
 
-// This is a typedef for a random number generator.
-// Try boost::mt19937 or boost::ecuyer1988 instead of boost::minstd_rand
-typedef boost::minstd_rand base_generator_type;
 
-struct distStats {
-        double meanProp, sdProp, d_in, d_out, d_total;
-};
+class Clusters : public ClusterData
+{
+    private:
+        const int _MAX_CLUST_SIZE = 100, _NUM_REPEATS = 100;
+        /*
+         * MAX_CLUST_SIZE must be the same as the value used in the R routine
+         * "get.clusters" that is used to generate initial cluster memberships.
+         * NUM_REPEATS is used for NeutralClusters, to determine how many sets
+         * of cluster memberships are used to generate statistics.
+         */
+    public:
+        int numClusters;
 
-void progLine (double progress, int nc);
+        Clusters (std::string str) 
+            : ClusterData (str)
+        {
+        }
+        ~Clusters ()
+        {
+            clusterIDs.resize (0);
+        }
+
+        int returnMaxClustSize () { return _MAX_CLUST_SIZE;    }
+        int returnNumRepeats () { return _NUM_REPEATS; }
+
+        int allocateClusters (base_generator_type * generator);
+        int readClusters (bool dir_to);
+        distStats calcClusterDists ();
+}; // end class Clusters
 
 #endif

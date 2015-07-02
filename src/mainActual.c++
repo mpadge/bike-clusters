@@ -1,6 +1,6 @@
 /***************************************************************************
  *  Project:    BikeClusters
- *  File:       Utils.h
+ *  File:       mainActual.cc
  *  Language:   C++
  *
  *  BikeClusters is free software: you can redistribute it and/or modify it
@@ -57,62 +57,71 @@
  *
  *  Compiler Options:   -std=c++11
  ***************************************************************************/
+#include "mainActual.h"
 
-#include <stdlib.h> // has abs function
-#include <math.h>
-#include <iostream>
-#include <stdio.h>
-#include <time.h>
-#include <limits.h>
-#include <vector>
-#include <string>
-#include <iomanip> // for setfill
-#include <sys/ioctl.h> // for console width: Linux only!
-#include <ctype.h>
-#include <fstream>
-#include <assert.h>
+int main(int argc, char *argv[]) {
 
-#include <boost/config.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
+    bool dir_to;
+    int count, dir_to_i;
+    double tempd, sum_mn, sum_sd;
+    std::string fname, city = "nyc";
+    std::ofstream out_file;
+    base_generator_type generator(42u);
+    time_t seed;
+    distStats clustDists;
 
-#include <boost/random/linear_congruential.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/uniform_real.hpp>
+    time (&seed);
+    generator.seed (static_cast <unsigned int> (seed));
 
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/dijkstra_shortest_paths.hpp>
-#include <boost/property_map/property_map.hpp>
+    count = -1;
+    while (*++argv != NULL)
+    {
+        if (count < 0)
+        {
+            city = *argv;
+            std::transform (city.begin(), city.end(), city.begin(), ::tolower);
+            if (city.substr (0, 2) == "lo")
+                city = "london";
+            else if (city.substr (0, 2) == "bo")
+                city = "boston";
+            else if (city.substr (0, 2) == "ch")
+                city = "chicago";
+            else if (city.substr (0, 2) == "wa" || city.substr (0, 2) == "dc")
+                city = "washingtondc";
+            else
+                city = "nyc";
+        } else {
+            dir_to_i = atoi (*argv);
+            if (dir_to_i == 0) 
+                dir_to = true;
+            else 
+                dir_to = false;
+        }
+        count++;
+    }
+    Clusters clusters (city);
+    std::cout << city << ": Number of stations = " << 
+        clusters.returnNumStations () << std::endl;
 
-#ifndef UTILS_H
-#define UTILS_H
+    fname = city + "-results-actual.txt";
+    std::cout << "writing to file:" << fname.c_str () << std::endl;
+    out_file.open (fname.c_str(), std::ios::out);
+    out_file << "nc,\tprop.mn,\tprop.sd,\td.in,\td.out,\tprop.total" << std::endl;
+    for (int nc=2; nc <= clusters.returnMaxClustSize (); nc++) {
+        clusters.numClusters = nc;
+        sum_mn = sum_sd = 0.0;
+        count = clusters.readClusters (dir_to);
+        clustDists = clusters.calcClusterDists ();
+        out_file << nc << ",\t" << clustDists.meanProp << ",\t" << 
+           clustDists.sdProp << ",\t" << clustDists.d_in << ",\t" <<
+           clustDists.d_out << ",\t" << clustDists.d_in / clustDists.d_total <<
+           std::endl;
 
-#define PI 3.1415926535897932384626433832795
-
-typedef boost::numeric::ublas::vector <int> ivec;
-typedef boost::numeric::ublas::matrix <int> imat;
-typedef boost::numeric::ublas::vector <double> dvec;
-typedef boost::numeric::ublas::matrix <double> dmat;
-typedef boost::numeric::ublas::vector <bool> bvec;
-typedef boost::numeric::ublas::matrix <bool> bmat;
-typedef boost::numeric::ublas::zero_matrix <double> zmat_d;
-typedef boost::numeric::ublas::zero_matrix <int> zmat_i;
-
-const double DOUBLE_MAX = std::numeric_limits<double>::max (),
-    DOUBLE_MIN = -DOUBLE_MAX,
-    FLOAT_MAX = std::numeric_limits <float>::max ();
-
-
-// This is a typedef for a random number generator.
-// Try boost::mt19937 or boost::ecuyer1988 instead of boost::minstd_rand
-typedef boost::minstd_rand base_generator_type;
-
-struct distStats {
-        double meanProp, sdProp, d_in, d_out, d_total;
-};
-
-void progLine (double progress, int nc);
-
-#endif
+        tempd = ((double) nc - 1.0) / 
+            ((double) clusters.returnMaxClustSize () - 1.0);
+        progLine (tempd, clusters.numClusters);
+    }
+    std::cout << std::endl << "Total distance travelled = " << 
+        clustDists.d_total << " km" << std::endl;
+    out_file.close ();
+}

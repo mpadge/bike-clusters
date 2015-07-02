@@ -1,6 +1,6 @@
 /***************************************************************************
  *  Project:    BikeClusters
- *  File:       Utils.h
+ *  File:       mainNeutral.cc
  *  Language:   C++
  *
  *  BikeClusters is free software: you can redistribute it and/or modify it
@@ -58,61 +58,68 @@
  *  Compiler Options:   -std=c++11
  ***************************************************************************/
 
-#include <stdlib.h> // has abs function
-#include <math.h>
-#include <iostream>
-#include <stdio.h>
-#include <time.h>
-#include <limits.h>
-#include <vector>
-#include <string>
-#include <iomanip> // for setfill
-#include <sys/ioctl.h> // for console width: Linux only!
-#include <ctype.h>
-#include <fstream>
-#include <assert.h>
+#include "mainNeutral.h"
 
-#include <boost/config.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
+int main(int argc, char *argv[]) {
 
-#include <boost/random/linear_congruential.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/uniform_real.hpp>
+    int tempi;
+    double tempd, sum_mn, sum_sd;
+    std::string city = "nyc";
+    std::ofstream out_file;
+    base_generator_type generator(42u);
+    time_t seed;
 
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/dijkstra_shortest_paths.hpp>
-#include <boost/property_map/property_map.hpp>
+    time (&seed);
+    generator.seed (static_cast <unsigned int> (seed));
 
-#ifndef UTILS_H
-#define UTILS_H
+    distStats clustDists;
 
-#define PI 3.1415926535897932384626433832795
+    while (*++argv != NULL)
+    {
+        city = *argv;
+        std::transform (city.begin(), city.end(), city.begin(), ::tolower);
+        if (city.substr (0, 2) == "lo")
+            city = "london";
+        else if (city.substr (0, 2) == "bo")
+            city = "boston";
+        else if (city.substr (0, 2) == "ch")
+            city = "chicago";
+        else if (city.substr (0, 2) == "wa" || city.substr (0, 2) == "dc")
+            city = "washingtondc";
+        else
+            city = "nyc";
+    }
+    Clusters clusters (city);
+    std::cout << city << ": Number of stations = " << 
+        clusters.returnNumStations () << std::endl;
 
-typedef boost::numeric::ublas::vector <int> ivec;
-typedef boost::numeric::ublas::matrix <int> imat;
-typedef boost::numeric::ublas::vector <double> dvec;
-typedef boost::numeric::ublas::matrix <double> dmat;
-typedef boost::numeric::ublas::vector <bool> bvec;
-typedef boost::numeric::ublas::matrix <bool> bmat;
-typedef boost::numeric::ublas::zero_matrix <double> zmat_d;
-typedef boost::numeric::ublas::zero_matrix <int> zmat_i;
-
-const double DOUBLE_MAX = std::numeric_limits<double>::max (),
-    DOUBLE_MIN = -DOUBLE_MAX,
-    FLOAT_MAX = std::numeric_limits <float>::max ();
-
-
-// This is a typedef for a random number generator.
-// Try boost::mt19937 or boost::ecuyer1988 instead of boost::minstd_rand
-typedef boost::minstd_rand base_generator_type;
-
-struct distStats {
-        double meanProp, sdProp, d_in, d_out, d_total;
-};
-
-void progLine (double progress, int nc);
-
-#endif
+    std::string fname = city + "-results-neutral.txt";
+    out_file.open (fname.c_str(), std::ios::out);
+    std::cout << "writing to file:" << fname.c_str () << std::endl;
+    std::cout << "Cluster size " << std::endl;
+    out_file << "nc,\tdmn,\tdsd" << std::endl;
+    for (int nc=2; nc <= clusters.returnMaxClustSize (); nc++) {
+        clusters.numClusters = nc;
+        sum_mn = sum_sd = 0.0;
+        for (int i=0; i<clusters.returnNumRepeats (); i++) {
+            tempi = clusters.allocateClusters (&generator);
+            clustDists = clusters.calcClusterDists ();
+            sum_mn += clustDists.d_in;
+            sum_sd += clustDists.d_in * clustDists.d_in;
+            tempd = ((double) i + 1.0) / (double) clusters.returnNumRepeats ();
+            progLine (tempd, clusters.numClusters);
+        }
+        sum_mn = sum_mn / (double) clusters.returnNumRepeats ();
+        // Note that population variance is calculated, rather than sample
+        // variance. The latter requires dividing sum_sd by (n - 1) rather than
+        // n, and multiplying _mn * _mn by n / (n - 1).
+        sum_sd = sum_sd / (double) clusters.returnNumRepeats () - 
+            sum_mn * sum_mn;
+        sum_sd = sqrt (sum_sd );
+        std::cout << "\r[" << clusters.numClusters <<
+            "] | Intra-cluster distance = " << sum_mn << " +/- " <<
+            sum_sd << " " << std::endl;
+        out_file << nc << ", " << sum_mn << ", " << sum_sd << std::endl;
+    } // end for nc 
+    out_file.close ();
+}

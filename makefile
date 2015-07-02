@@ -1,28 +1,25 @@
-CC=g++
-CFLAGS=-c
-LIBS=-lboost_system
+if [[-z "$CXX"]]; then CXX='c++'
+CFLAGS=-c -std=c++11
+LIBS=
 VPATH=./src
-OBJECTS1 = NeutralClusters.o Utils.o InOut.o DataProcessing.o Calculations.o
-OBJECTS2 = GetR2Mats.o Utils.o InOut.o DataProcessing.o Calculations.o
-OBJECTS3 = Clusters.o Utils.o InOut.o DataProcessing.o Calculations.o
+OBJECTS_NEUTRAL = ClusterData.o Utils.o ClusterCalculations.o mainNeutral.o
+OBJECTS_ACTUAL = ClusterData.o Utils.o ClusterCalculations.o mainActual.o
+
+all: mainNeutral mainActual
+
+neutral: mainNeutral
+
+actual: mainActual
+
+mainNeutral: $(OBJECTS_NEUTRAL)
+	$(CXX) $(OBJECTS_NEUTRAL) -o ClustersNeutral $(LIBS) 
+
+mainActual: $(OBJECTS_ACTUAL)
+	$(CXX) $(OBJECTS_ACTUAL) -o ClustersActual $(LIBS) 
 
 %.o: %.c++
-	$(CC) $(CFLAGS) $<
-
-all: ncl
-
-ncl: $(OBJECTS1)
-	$(CC) $(OBJECTS1) $(LIBS) -o NeutralClusters
-
-getr2: GetR2Mats
-
-GetR2Mats: $(OBJECTS2)
-	$(CC) $(OBJECTS2) $(LIBS) -o getr2
-
-clusters: Clusters
-
-Clusters: $(OBJECTS3)
-	$(CC) $(OBJECTS3) $(LIBS) -o Clusters
+	$(CXX) $(CFLAGS) $<
 
 clean:
 	rm -f *.o 
+

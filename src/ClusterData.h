@@ -1,6 +1,6 @@
 /***************************************************************************
  *  Project:    BikeClusters
- *  File:       Utils.h
+ *  File:       ClusterData.h
  *  Language:   C++
  *
  *  BikeClusters is free software: you can redistribute it and/or modify it
@@ -58,61 +58,93 @@
  *  Compiler Options:   -std=c++11
  ***************************************************************************/
 
-#include <stdlib.h> // has abs function
+
+#ifndef CLUSTERDATA_H
+#define CLUSTERDATA_H
+
+#include "Utils.h"
+
+#include <dirent.h>
+#include <stdlib.h> // for EXIT_FAILURE
+#include <string.h>
+#include <fstream>
+#include <assert.h>
 #include <math.h>
 #include <iostream>
 #include <stdio.h>
 #include <time.h>
-#include <limits.h>
 #include <vector>
-#include <string>
 #include <iomanip> // for setfill
 #include <sys/ioctl.h> // for console width: Linux only!
-#include <ctype.h>
-#include <fstream>
-#include <assert.h>
 
-#include <boost/config.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
+class ClusterData
+{
+    protected:
+        std::string _dirName;
+        const std::string _city;
+        int _numStations, _maxStation;
+        std::vector <int> _StationIndex;
+    public:
+        std::string fileName;
+        dmat ntrips, r2, dists;
+        ivec clusterIDs;
 
-#include <boost/random/linear_congruential.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/uniform_real.hpp>
+        struct OneStation 
+        {
+            std::string name; 
+            int ID;
+            float lon, lat;
+        };
+        std::vector <OneStation> StationList;
 
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/dijkstra_shortest_paths.hpp>
-#include <boost/property_map/property_map.hpp>
+        ClusterData (std::string str)
+            : _city (str)
+        {
+            _dirName = GetDirName ();
+            _maxStation = GetStations ();
+            _numStations = StationList.size ();
+            InitialiseArrays ();
+            if (_city.substr (0, 6) != "oyster")
+                MakeStationIndex ();
+            readDMat ();
+            readNTrips ();
+        }
+        ~ClusterData ()
+        {
+            StationList.resize (0);
+            ntrips.resize (0, 0);
+            r2.resize (0, 0);
+            dists.resize (0, 0);
+            clusterIDs.resize (0);
+        }
 
-#ifndef UTILS_H
-#define UTILS_H
+        std::string returnDirName () { return _dirName; }
+        std::string returnCity () { return _city;   }
+        int returnNumStations () { return _numStations; }
+        int returnMaxStation () { return _maxStation;   }
+        
+        std::string GetDirName ();
+        int GetStations ();
+        void MakeStationIndex ();
+        int readDMat ();
+        int readNTrips ();
 
-#define PI 3.1415926535897932384626433832795
-
-typedef boost::numeric::ublas::vector <int> ivec;
-typedef boost::numeric::ublas::matrix <int> imat;
-typedef boost::numeric::ublas::vector <double> dvec;
-typedef boost::numeric::ublas::matrix <double> dmat;
-typedef boost::numeric::ublas::vector <bool> bvec;
-typedef boost::numeric::ublas::matrix <bool> bmat;
-typedef boost::numeric::ublas::zero_matrix <double> zmat_d;
-typedef boost::numeric::ublas::zero_matrix <int> zmat_i;
-
-const double DOUBLE_MAX = std::numeric_limits<double>::max (),
-    DOUBLE_MIN = -DOUBLE_MAX,
-    FLOAT_MAX = std::numeric_limits <float>::max ();
-
-
-// This is a typedef for a random number generator.
-// Try boost::mt19937 or boost::ecuyer1988 instead of boost::minstd_rand
-typedef boost::minstd_rand base_generator_type;
-
-struct distStats {
-        double meanProp, sdProp, d_in, d_out, d_total;
-};
-
-void progLine (double progress, int nc);
+        void InitialiseArrays ()
+        {
+            ntrips.resize (_numStations, _numStations);
+            r2.resize (_numStations, _numStations);
+            dists.resize (_numStations, _numStations);
+            for (int i=0; i<_numStations; i++)
+            {
+                for (int j=0; j<_numStations; j++)
+                {
+                    ntrips (i, j) = DOUBLE_MIN;
+                    r2 (i, j) = DOUBLE_MIN;
+                    dists (i, j) = DOUBLE_MIN;
+                }
+                dists (i, i) = 0.0;
+            }
+        }
+}; // end class ClusterData
 
 #endif
