@@ -15,6 +15,20 @@ get.members <- function (city="nyc", nc=8, method="ward", details=FALSE)
 {
     require (tripack) # For Delaunay triangulation and neighbour lists
 
+    if (tolower (substring (city, 1, 2)) == "ny")
+        city <- "nyc"
+    else if (tolower (substring (city, 1, 2)) == "lo")
+        city <- "london"
+    else if (tolower (substring (city, 1, 2)) == "wa" |
+                tolower (substring (city, 1, 2)) == "dc")
+        city <- "washingtondc"
+    else if (tolower (substring (city, 1, 2)) == "ch")
+        city <- "chicago"
+    else if (tolower (substring (city, 1, 2)) == "bo")
+        city <- "boston"
+    else 
+        stop ("city not valid")
+
     wd0 <- getwd ()
     count <- 0
     wdd <- wdr <- ""

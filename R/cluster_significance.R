@@ -1229,4 +1229,3 @@ rescale.xm <- function (xm, rescale=2) {
     xm <- 2 * (xm - bounds.lower) / (bounds.upper - bounds.lower) - 1
     return (xm)
 } # end function rescale.xm
-
