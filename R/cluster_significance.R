@@ -7,9 +7,9 @@
 #   6. rescale.xm
 #
 # clust.sig uses the output of calc.pnc, which calculates the probability of
-# observing a given peak height for a given number of clusters. This routine in turn
-# uses the output of num.clusts, which is therefore the "primary" routine to be run
-# prior to any others.
+# observing a given peak height for a given number of clusters. This routine in
+# turn uses the output of num.clusts, which is therefore the "primary" routine
+# to be run prior to any others.
 #
 # num.clusts calculates the G-values and peak heights for a range of numbers of
 # peaks from 2 to 15 for all 4 data series.

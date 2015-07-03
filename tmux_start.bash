@@ -38,6 +38,7 @@ cd ./R/
 tmux new-window -t $SESSION:4 -n R
 tmux select-window -t $SESSION:4
 tmux send-keys -t $SESSION:4 'vim get-clusters.R' C-m
+tmux send-keys -t $SESSION:4 ':' 'tabe cluster_significance.R' C-m
 
 tmux select-window -t $SESSION:1
 
