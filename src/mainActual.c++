@@ -64,19 +64,36 @@ int main(int argc, char *argv[]) {
     bool dir_to;
     int count, dir_to_i;
     double tempd, sum_mn, sum_sd;
-    std::string fname, city = "nyc";
+    std::string fname, city = "nyc", method="complete";
     std::ofstream out_file;
     base_generator_type generator(42u);
     time_t seed;
     distStats clustDists;
 
+    std::cout << std::endl << "_____________________________________________" << 
+        "____________________________________________" << std::endl;
+    std::cout << "|\t\t\t\t\t\t\t\t\t\t\t|" << std::endl;
+    std::cout << "|\t./ClustersActual with three parameters:\t\t\t\t\t\t|" << std::endl;
+    std::cout << "|\t\t1. <city> =  " <<
+        "<london/nyc/boston/chicago/washingtondc>\t\t\t|" << std::endl;
+    std::cout << "|\t\t2. <method> = <ward/complete/k-means/skater>\t\t\t\t|" <<
+        std::endl;
+    std::cout << "|\t\t3. <direction> = <0 for TO, otherwise FROM>\t\t\t\t|" <<
+        std::endl;
+    std::cout << "|\t\t\t\t\t\t\t\t\t\t\t|" << std::endl;
+    std::cout << "_____________________________________________" << 
+        "____________________________________________" << std::endl <<
+        std::endl;
+
     time (&seed);
     generator.seed (static_cast <unsigned int> (seed));
 
-    count = -1;
+    count = 0;
+    city = "nyc";
+
     while (*++argv != NULL)
     {
-        if (count < 0)
+        if (count < 1)
         {
             city = *argv;
             std::transform (city.begin(), city.end(), city.begin(), ::tolower);
@@ -90,6 +107,19 @@ int main(int argc, char *argv[]) {
                 city = "washingtondc";
             else
                 city = "nyc";
+        } else if (count < 2) {
+            method = *argv;
+            std::transform (method.begin(), method.end(), 
+                    method.begin(), ::tolower);
+            if (method.substr (0, 2) == "co")
+                method = "complete";
+            else if (method.substr (0, 2) == "wa")
+                method = "ward";
+            else if (method.substr (0, 2) == "sk")
+                method = "skater";
+            else if (method.substr (0, 1) == "k")
+                method = "k-means";
+
         } else {
             dir_to_i = atoi (*argv);
             if (dir_to_i == 0) 
@@ -99,11 +129,22 @@ int main(int argc, char *argv[]) {
         }
         count++;
     }
-    Clusters clusters (city);
-    std::cout << city << ": Number of stations = " << 
+    Clusters clusters (city, method);
+    std::cout << "Calculating actual distances ridden for:" << std::endl;
+    std::cout << "\tCity = " << city << "; clustering method = " <<
+        method << "; direction = ";
+    if (dir_to)
+        std::cout << "TO";
+    else
+        std::cout << "FROM";
+    std::cout << "; number of stations = " << 
         clusters.returnNumStations () << std::endl;
 
-    fname = city + "-results-actual.txt";
+    fname = city + "-results-actual-";
+    if (dir_to)
+        fname += "to-" + method + ".txt";
+    else
+        fname += "from-" + method + ".txt";
     std::cout << "writing to file:" << fname.c_str () << std::endl;
     out_file.open (fname.c_str(), std::ios::out);
     out_file << "nc,\tprop.mn,\tprop.sd,\td.in,\td.out,\tprop.total" << std::endl;

@@ -1,3 +1,9 @@
+library (devtools)
+library (roxygen2)
+setwd ("../..")
+install ("sortpart")
+load_all ("sortpart")
+
 # Contains the following functions:
 #   1. clust.sig - the main plotting & analysis routine
 #   2. get.members

@@ -77,12 +77,16 @@ class Clusters : public ClusterData
          * NUM_REPEATS is used for NeutralClusters, to determine how many sets
          * of cluster memberships are used to generate statistics.
          */
+    protected:
+        const std::string _method;
     public:
         int numClusters;
+        std::string clustMethod;
 
-        Clusters (std::string str) 
-            : ClusterData (str)
+        Clusters (std::string cityStr, std::string methodStr) 
+            : _method (methodStr), ClusterData (cityStr)
         {
+            clustMethod = "complete";
         }
         ~Clusters ()
         {
@@ -91,6 +95,7 @@ class Clusters : public ClusterData
 
         int returnMaxClustSize () { return _MAX_CLUST_SIZE;    }
         int returnNumRepeats () { return _NUM_REPEATS; }
+        std::string returnMethod () { return _method;   }
 
         int allocateClusters (base_generator_type * generator);
         int readClusters (bool dir_to);

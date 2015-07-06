@@ -81,7 +81,6 @@ get.skater.groups <- function (city="nyc", dirf="from", max.groups=50)
     # London has a duplicate xy for some reason
     nn <- as.numeric (row.names (unique (xy)))
     ni <- which ((1:length (nn) - nn) != 0)[1] # index of duplicates
-    xy <- unique (xy) 
     names (xy) <- c ("x", "y")
 
     # r2 matrices sometimes have entire missing columns, which are ultimately

@@ -218,9 +218,9 @@ int Clusters::readClusters (bool dir_to)
     std::ifstream in_file;
 
     if (dir_to)
-        fname = "results/" + _city + "-clust-to-members-ward.txt";
+        fname = "results/" + _city + "-clust-to-members-" + _method + ".txt";
     else
-        fname = "results/" + _city + "-clust-from-members-ward.txt";
+        fname = "results/" + _city + "-clust-from-members-" + _method + ".txt";
 
     in_file.open (fname.c_str (), std::ifstream::in);
     assert (!in_file.fail ());

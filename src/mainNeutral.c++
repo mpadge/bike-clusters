@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 
     int tempi;
     double tempd, sum_mn, sum_sd;
-    std::string city = "nyc";
+    std::string city = "nyc", cityCaps;
     std::ofstream out_file;
     base_generator_type generator(42u);
     time_t seed;
@@ -73,6 +73,16 @@ int main(int argc, char *argv[]) {
     generator.seed (static_cast <unsigned int> (seed));
 
     distStats clustDists;
+
+    std::cout << std::endl << "_____________________________________________" << 
+        "____________________________________________" << std::endl;
+    std::cout << "|\t\t\t\t\t\t\t\t\t\t\t|" << std::endl;
+    std::cout << "|\t./ClustersNeutral <city> =  " <<
+        "<london/nyc/boston/chicago/washingtondc>\t\t|" << std::endl;
+    std::cout << "|\t\t\t\t\t\t\t\t\t\t\t|" << std::endl;
+    std::cout << "_____________________________________________" << 
+        "____________________________________________" << std::endl <<
+        std::endl;
 
     while (*++argv != NULL)
     {
@@ -89,8 +99,11 @@ int main(int argc, char *argv[]) {
         else
             city = "nyc";
     }
+    cityCaps = city;
+    std::transform (cityCaps.begin(), cityCaps.end(), 
+            cityCaps.begin(), ::toupper); 
     Clusters clusters (city);
-    std::cout << city << ": Number of stations = " << 
+    std::cout << cityCaps << ": Number of stations = " << 
         clusters.returnNumStations () << std::endl;
 
     std::string fname = city + "-results-neutral.txt";
