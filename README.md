@@ -4,24 +4,26 @@ A collection of programs to analyse clusters within urban areas as produced by
 usage patterns of hire bicycle systems. Requires the output of
 `bike-correlations', in particular the correlation (R2) and distance matrices.
 Currently able to analyse data from London, NYC, Boston, Chicago, and Washington
-DC.
+DC, using cluster methods of `ward', `complete', `k-means', and `skater'.
 
-# Building and Usage
+Analyses are ultimately based on comparisons of the total distances ridden
+within clusters to equivalent distances ridden between them.
 
-1.  Use makefile to produce the two executable files ClustersNeutral and
-    ClustersActual 
-2.  Run R routine `get-clusters` to produce results files of cluster memberships
-    using preferred clustering algorithm.
-3.  Run R routine `calc.pnc` (can be run independently) to generate
-    randomly-distributed probabilities of peak heights in relationship between
-    numbers of clusters and their T-values above neutral distributions (in file
-    `results_prob_m.txt`).
-4.  Run `>./ClustersNeutral` to generate random (neutral) values for distances
-    ridden between randomly-generated clusters. 
-5.  Run `>./ClustersActual` to calculate observed distances ridden between clusters as
-    allocated according to specified clustering algorithm 
-6.  Run R routine `num.clusts` to generate observed statistics for peak heights to
-    be compared with neutral values.
-7.  Run R routine `clust.sig` to produce final output of all statistics and
-    graphics.
+Use makefile to build. Note that the C++ routines can take a long time to
+execute, and so are built as stand-alones, rather than being integrated into R.
+The two routines are `ClustersNeutral', which generates neutrally expected
+values of inter- and intra-cluster distance, and `Clusters Actual', which does
+the corresponding calculations for the observed rides.
 
+All calculations are repeated for a range of numbers of clusters (up to 100).
+
+# Usage for a given city and clustering method:
+
+1. `>./ClustersNeutral city'
+2. `R> get.clusters (city method)'
+3. `R> get.skater.groups (city, method)'
+4. `>./ClustersActual city'
+5. 'R> calc.pnc (city, method'
+6. 'R> clust.sig (city, method)'
+
+See `aaaread-this' for further details.
