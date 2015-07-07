@@ -24,7 +24,7 @@ All calculations are repeated for a range of numbers of clusters (up to 100).
 2. `R> get.clusters (city method)`
 3. `R> get.skater.groups (city, method)`
 4. `>./ClustersActual city`
-5. 'R> calc.pnc (city, method`
-6. 'R> clust.sig (city, method)`
+5. `R> calc.pnc (city, method`
+6. `R> clust.sig (city, method)`
 
-See `aaaread-this' for further details.
+See `aaaread-this` for further details.
