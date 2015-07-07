@@ -70,6 +70,9 @@ int main(int argc, char *argv[]) {
     time_t seed;
     distStats clustDists;
 
+    // These hold averages for k-means of the 10 repeats
+    double meanProp, sdProp, d_in, d_out, d_total;
+
     std::cout << std::endl << "_____________________________________________" << 
         "____________________________________________" << std::endl;
     std::cout << "|\t\t\t\t\t\t\t\t\t\t\t|" << std::endl;
@@ -151,12 +154,31 @@ int main(int argc, char *argv[]) {
     for (int nc=2; nc <= clusters.returnMaxClustSize (); nc++) {
         clusters.numClusters = nc;
         sum_mn = sum_sd = 0.0;
-        count = clusters.readClusters (dir_to);
-        clustDists = clusters.calcClusterDists ();
-        out_file << nc << ",\t" << clustDists.meanProp << ",\t" << 
-           clustDists.sdProp << ",\t" << clustDists.d_in << ",\t" <<
-           clustDists.d_out << ",\t" << clustDists.d_in / clustDists.d_total <<
-           std::endl;
+        if (method != "k-means")
+        {
+            count = clusters.readClusters (dir_to);
+            clustDists = clusters.calcClusterDists ();
+            out_file << nc << ",\t" << clustDists.meanProp << ",\t" << 
+               clustDists.sdProp << ",\t" << clustDists.d_in << ",\t" <<
+               clustDists.d_out << ",\t" << clustDists.d_in / clustDists.d_total <<
+               std::endl;
+        } else {
+            meanProp = sdProp = d_in = d_out = d_total = 0.0;
+            for (int i=0; i<10; i++)
+            {
+                count = clusters.readClusters (dir_to, i);
+                clustDists = clusters.calcClusterDists ();
+                meanProp += clustDists.meanProp;
+                sdProp += clustDists.sdProp;
+                d_out += clustDists.d_out;
+                d_in += clustDists.d_in;
+                d_total += clustDists.d_total;
+            }
+            out_file << nc << ",\t" << meanProp / 10.0 << ",\t" << 
+               sdProp / 10.0 << ",\t" << d_in / 10.0 << ",\t" <<
+               d_out / 10.0 << ",\t" << d_in / d_total <<
+               std::endl;
+        }
 
         tempd = ((double) nc - 1.0) / 
             ((double) clusters.returnMaxClustSize () - 1.0);

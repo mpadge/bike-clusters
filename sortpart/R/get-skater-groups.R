@@ -14,16 +14,16 @@ get.skater.groups <- function (city="nyc", dirf="from", max.groups=50)
     require (spdep)
     require (tripack)
 
-    if (tolower (substring (city, 1, 2)) == "ny")
+    if (tolower (substring (city, 1, 1)) == "n")
         city <- "nyc"
-    else if (tolower (substring (city, 1, 2)) == "lo")
+    else if (tolower (substring (city, 1, 1)) == "l")
         city <- "london"
-    else if (tolower (substring (city, 1, 2)) == "wa" |
-                tolower (substring (city, 1, 2)) == "dc")
+    else if (tolower (substring (city, 1, 1)) == "w" |
+                tolower (substring (city, 1, 1)) == "d")
         city <- "washingtondc"
-    else if (tolower (substring (city, 1, 2)) == "ch")
+    else if (tolower (substring (city, 1, 1)) == "c")
         city <- "chicago"
-    else if (tolower (substring (city, 1, 2)) == "bo")
+    else if (tolower (substring (city, 1, 1)) == "b")
         city <- "boston"
     else 
         stop ("city not valid")
@@ -131,9 +131,9 @@ get.skater.groups <- function (city="nyc", dirf="from", max.groups=50)
     # Note also that the "i" parameter is the number of times the tree is
     # divided, so dividing it N times creates (N+1) groups.
     if (dirf == "from")
-        fname <- paste (city, "_skater_from_members.txt", sep="")
+        fname <- paste (city, "-clust-from-members-skater.txt", sep="")
     else
-        fname <- paste (city, "_skater_to_members.txt", sep="")
+        fname <- paste (city, "-clust-to-members-skater.txt", sep="")
 
     sk.groups <- array (NA, dim=c(nrow (dfull), max.groups - 1))
     require (data.table)

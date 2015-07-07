@@ -15,20 +15,30 @@ get.members <- function (city="nyc", nc=8, method="ward", details=FALSE)
 {
     require (tripack) # For Delaunay triangulation and neighbour lists
 
-    if (tolower (substring (city, 1, 2)) == "ny")
+    if (tolower (substring (city, 1, 1)) == "n")
         city <- "nyc"
-    else if (tolower (substring (city, 1, 2)) == "lo")
+    else if (tolower (substring (city, 1, 1)) == "l")
         city <- "london"
-    else if (tolower (substring (city, 1, 2)) == "wa" |
-                tolower (substring (city, 1, 2)) == "dc")
+    else if (tolower (substring (city, 1, 1)) == "w" |
+                tolower (substring (city, 1, 1)) == "d")
         city <- "washingtondc"
-    else if (tolower (substring (city, 1, 2)) == "ch")
+    else if (tolower (substring (city, 1, 1)) == "c")
         city <- "chicago"
-    else if (tolower (substring (city, 1, 2)) == "bo")
+    else if (tolower (substring (city, 1, 1)) == "b")
         city <- "boston"
     else 
         stop ("city not valid")
 
+    method <- tolower (substring (method, 1, 1))
+    if (!method %in% c ("w", "s", "k"))
+        method <- "complete"
+    else if (method == "w")
+        method <- "ward"
+    else if (method == "s")
+        method <- "skater"
+    else if (method == "k")
+        method <- "k-means"
+    
     wd0 <- getwd ()
     count <- 0
     wdd <- wdr <- ""
@@ -103,7 +113,7 @@ get.members <- function (city="nyc", nc=8, method="ward", details=FALSE)
         }
 
         nc.add <- nc.temp <- 0 # nc.temp is observed value after reallocation
-        while (nc.temp < nc) {
+        while (nc.temp < nc & (nc + nc.add) < length (nbs2)) {
             if (method == "k-means") {
                 km <- kmeans (as.dist (dmat), centers = nc + nc.add, 
                               iter.max = 20, nstart = 5)
@@ -149,6 +159,11 @@ get.members <- function (city="nyc", nc=8, method="ward", details=FALSE)
             renum.ID <- as.vector (renum.ID)
             membs [[i]] [renum.indx] <- renum.ID
         }
+        # Next clause may be met in small cities (boston) for k-means, where
+        # resultant numbers of clusters will not be precisely nc, and so nc.add
+        # may be incremented extensively.
+        if ((nc + nc.add) >= length (nbs2))
+            membs [[i]] <- rep (NA, length (nbs2))
     }
     membs <- do.call (cbind, membs) 
     if (details) {

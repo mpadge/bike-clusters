@@ -98,7 +98,7 @@ class Clusters : public ClusterData
         std::string returnMethod () { return _method;   }
 
         int allocateClusters (base_generator_type * generator);
-        int readClusters (bool dir_to);
+        int readClusters (bool dir_to, int trialNum = -1);
         distStats calcClusterDists ();
 }; // end class Clusters
 

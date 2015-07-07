@@ -208,9 +208,15 @@ int Clusters::allocateClusters (base_generator_type*  generator)
  ************************************************************************
  ************************************************************************/
 
-int Clusters::readClusters (bool dir_to)
+int Clusters::readClusters (bool dir_to, int trialNum)
 {
-    const std::string dir = "./results/";
+    std::string dir = "./results/";
+    if (_method == "k-means")
+        dir += "k-means-clusters/";
+
+    std::string trialStr = std::to_string (trialNum);
+    if (trialNum < 0)
+        trialStr = "";
 
     int ipos, count;
     ivec cluster_ids;
@@ -218,9 +224,11 @@ int Clusters::readClusters (bool dir_to)
     std::ifstream in_file;
 
     if (dir_to)
-        fname = "results/" + _city + "-clust-to-members-" + _method + ".txt";
+        fname = dir + _city + "-clust-to-members-" + _method + 
+            trialStr + ".txt";
     else
-        fname = "results/" + _city + "-clust-from-members-" + _method + ".txt";
+        fname = dir + _city + "-clust-from-members-" + _method + 
+            trialStr + ".txt";
 
     in_file.open (fname.c_str (), std::ifstream::in);
     assert (!in_file.fail ());

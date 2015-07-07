@@ -6,27 +6,39 @@
 #'
 #' @param city nyc, washington, chicago, boston, london (case insensitive)
 #' @param method = (ward, k-means, complete)
+#' @param trial is appended to filename (used to generate multiple k-means
+#' results).
 #' @return nothing (dumps files to dir)
 
-get.clusters <- function (city="nyc", method="ward")
+get.clusters <- function (city="nyc", method="ward", trial="")
 {
     require (spatstat) # for ppp
     require (geosphere) # for areaPolygon
 
-    if (tolower (substring (city, 1, 2)) == "ny")
+    if (tolower (substring (city, 1, 1)) == "n")
         city <- "nyc"
-    else if (tolower (substring (city, 1, 2)) == "lo")
+    else if (tolower (substring (city, 1, 1)) == "l")
         city <- "london"
-    else if (tolower (substring (city, 1, 2)) == "wa" |
-                tolower (substring (city, 1, 2)) == "dc")
+    else if (tolower (substring (city, 1, 1)) == "w" |
+                tolower (substring (city, 1, 1)) == "d")
         city <- "washingtondc"
-    else if (tolower (substring (city, 1, 2)) == "ch")
+    else if (tolower (substring (city, 1, 1)) == "c")
         city <- "chicago"
-    else if (tolower (substring (city, 1, 2)) == "bo")
+    else if (tolower (substring (city, 1, 1)) == "b")
         city <- "boston"
     else 
         stop ("city not valid")
 
+    method <- tolower (substring (method, 1, 1))
+    if (!method %in% c ("w", "s", "k"))
+        method <- "complete"
+    else if (method == "w")
+        method <- "ward"
+    else if (method == "s")
+        method <- "skater"
+    else if (method == "k")
+        method <- "k-means"
+    
     max_clust_size <- 100
 
     wd0 <- getwd ()
@@ -86,19 +98,21 @@ get.clusters <- function (city="nyc", method="ward")
     } # end for nc
     close (pb)
     setwd (wd0)
+
     indx <- 2:max_clust_size
     clust.from <- clust.from [,indx]
     clust.to <- clust.to [,indx]
     clust.diam.from <- clust.diam.from [indx, ]
     clust.diam.to <- clust.diam.to [indx, ]
-    fname <- paste (city, "-clust-from-members-", method, ".txt", sep="")
+
+    fname <- paste (city, "-clust-from-members-", method, trial, ".txt", sep="")
     write.table (clust.from, file=fname, sep=",", row.names=FALSE, col.names=FALSE)
-    fname <- paste (city, "-clust-to-members-", method, ".txt", sep="")
+    fname <- paste (city, "-clust-to-members-", method, trial, ".txt", sep="")
     write.table (clust.to, file=fname, sep=",", row.names=FALSE, col.names=FALSE)
-    fname <- paste (city, "-clust-from-diameters-", method, ".txt", sep="")
+    fname <- paste (city, "-clust-from-diameters-", method, trial, ".txt", sep="")
     write.table (clust.diam.from, file=fname, sep=",", row.names=FALSE,
                  col.names=FALSE)
-    fname <- paste (city, "-clust-to-diameters-", method, ".txt", sep="")
+    fname <- paste (city, "-clust-to-diameters-", method, trial, ".txt", sep="")
     write.table (clust.diam.to, file=fname, sep=",", row.names=FALSE,
                  col.names=FALSE)
 } # end function get.clusters

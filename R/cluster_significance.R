@@ -1,6 +1,7 @@
 library (devtools)
 library (roxygen2)
 setwd ("../..")
+document("sortpart")
 install ("sortpart")
 load_all ("sortpart")
 
@@ -24,20 +25,19 @@ load_all ("sortpart")
 # *************************   CLUST.SIG   *************************
 # *****************************************************************
 
-clust.sig <- function (method="complete", xmax=36)
+clust.sig <- function (city="nyc", method="complete", xmax=36)
 {
-    require (quantreg) # For upper bound regressions
     require (data.table) # For timetaken function
 
     st <- Sys.time ()
     cat (rep ("\n", 100))
-    # NOTE: This seed is only to allow it to always generate appropriate k-means to
-    # get through running the whole thing. Comment out to run it properly!!
+    # NOTE: This seed is only to allow it to always generate appropriate k-means
+    # to get through running the whole thing. Comment out to run it properly!!
     set.seed (18)
-    # These are results for different random seeds for k-means clusters.
-    # groups is contiguous / all. These are calculated by analysing only those
-    # hierarchical levels for which the largest contiguous partition represents more
-    # than half of all clusters.
+    # These are results for different random seeds for k-means clusters.  groups
+    # is contiguous / all. These are calculated by analysing only those
+    # hierarchical levels for which the largest contiguous partition represents
+    # more than half of all clusters.
     #
     # Direction = "to":
     # -----------------
@@ -112,44 +112,40 @@ clust.sig <- function (method="complete", xmax=36)
     # = 56.8 / 68 = 83.5%
 
 
-    if (method == "ward") {
-        d.to <- read.csv ("./results/results_actual_ward_to.txt", 
-                            sep=",", header=TRUE)
-        d.from <- read.csv ("./results/results_actual_ward_from.txt", 
-                            sep=",", header=TRUE)
-    } else if (method == "complete") {
-        d.to <- read.csv ("./results/results_actual_complete_to.txt", 
-                            sep=",", header=TRUE)
-        d.from <- read.csv ("./results/results_actual_complete_from.txt", 
-                            sep=",", header=TRUE)
-    } else if (method == "skater") {
-        d.to <- read.csv ("./results/results_actual_skater_to.txt", 
-                            sep=",", header=TRUE)
-        d.from <- read.csv ("./results/results_actual_skater_from.txt", 
-                            sep=",", header=TRUE)
-    }
-    d.to.kmeans <- read.csv ("./results/results_actual_kmeans_to.txt", 
-                            sep=",", header=TRUE)
-    d.from.kmeans <- read.csv ("./results/results_actual_kmeans_from.txt", 
-                            sep=",", header=TRUE)
-    d.neutral <- read.csv ("./results/results_neutral.txt", sep=",", header=TRUE)
+    fname <- paste ("./results/", city, "-results-actual-to-", 
+                    method, ".txt", sep="")
+    if (!file.exists (fname))
+        stop (cat (fname, " does not exist!", sep=""))
+    else
+        d.to <- read.csv (fname, header=TRUE)
+    fname <- paste ("./results/", city, "-results-actual-from-", 
+                    method, ".txt", sep="")
+    if (!file.exists (fname))
+        stop (cat (fname, " does not exist!", sep=""))
+    else
+        d.from <- read.csv (fname, header=TRUE)
 
-    # The k-means values include 10 repeats of each value, which are first averaged:
-    indx <- sort (unique (d.to.kmeans$nc))
-    d.to.kmeans.mn <- d.to.kmeans [indx,] # Dummy matrix of right size.
-    d.from.kmeans.mn <- d.from.kmeans [indx,]
-    for (i in 1:length (indx)) {
-        indx2 <- which (d.to.kmeans == indx [i])
-        d.to.kmeans.mn [i, ] <- colMeans (d.to.kmeans [indx2,])
-        d.from.kmeans.mn [i, ] <- colMeans (d.from.kmeans [indx2,])
-    }
-    d.to.kmeans <- d.to.kmeans.mn
-    d.from.kmeans <- d.from.kmeans.mn
+    fname <- paste ("./results/", city, "-results-actual-to-k-means.txt", sep="")
+    if (!file.exists (fname))
+        stop (cat (fname, " does not exist!", sep=""))
+    else
+        d.to.kmeans <- read.csv (fname, header=TRUE)
+    fname <- paste ("./results/", city, "-results-actual-from-k-means.txt", sep="")
+    if (!file.exists (fname))
+        stop (cat (fname, " does not exist!", sep=""))
+    else
+        d.from.kmeans <- read.csv (fname, header=TRUE)
+
+    fname <- paste ("./results/", city, "-results-neutral.txt", sep="")
+    if (!file.exists (fname))
+        stop (cat (fname, " does not exist!", sep=""))
+    else
+        d.neutral <- read.csv (fname, header=TRUE)
 
     # The neutral files just contain $(nsd,dmn,dsd), where the distances are total
     # intra-cluster distances which can be converted to proportions through dividing
     # by the total overall distances of:
-    total.dist <- 26858.03
+    total.dist <- get.total.dist (city=city)
     nc <- d.neutral$nc
 
     # First plot is ratio of observed to expected distance ridden within clusters
@@ -247,12 +243,10 @@ clust.sig <- function (method="complete", xmax=36)
     } # end for j
     plot (xdat [indx], y.resc [,1], "l", col=cols [1], lwd=2, ylim=range (y.resc),
           ylab="Rescaled T-values", main="Rescaled T-values")
-    for (i in 1:25) {
+    for (i in 1:25)
         lines (rep (i*4, 2), range (y.resc), col="gray", lty=2)
-    }
-    for (i in 1:2) {
+    for (i in 1:2)
         lines (xdat [indx], y.resc [,i], col=cols [i], lwd=2)
-    }
 
 
     # *************************************************************************
@@ -338,9 +332,11 @@ clust.sig <- function (method="complete", xmax=36)
         # Note that partition size and merge calculations exclude the initial
         # partition from 1 to xdat [pks] [1].
         part.sizesC <- part.sizes <- mvals <- NULL
-        for (j in 2:length (xdat [pks])) {
+        for (j in 2:length (xdat [pks])) 
+        {
             nci <- c (xdat [pks] [j-1], xdat [pks] [j])
-            nbs <- get.partition.neighbours (nci, dir=dirs [i], method=meth [i])
+            nbs <- get.partition.neighbours (city=city, method=meth [i],
+                                             nc=nci, dir=dirs [i])
             # -----------------------------------------------
             # To analyse ALL new partitions, instead of the just the contiguous
             # ones, insert this following definition of npeaks (returned from
@@ -358,27 +354,31 @@ clust.sig <- function (method="complete", xmax=36)
             # the majority of all new partitions:
             nfrac <- sum (nbs [[1]]) / sum (unlist (nbs))
             mfrac <- length (nbs [[1]]) / length (unlist (nbs))
-            if (nfrac >= 0.5 & mfrac >= 0.5) {
+            if (nfrac >= 0.5 & mfrac >= 0.5) 
+            {
                 part.sizes <- c (part.sizes, sum (unlist (nbs)))
                 part.sizesC <- c (part.sizesC, sum (nbs [[1]]))
                 mvals <- c (mvals, length (nbs [[1]]))
                 cat ("| ", j, "\t", nci [1], "->", nci [2], "\t|\t", sum (nbs [[1]]), 
                      " / ", sum (unlist (nbs)), "\t", length (nbs [[1]]),
                      " / ", length (unlist (nbs)), sep="")
-                if (j == 2) { cat ("\t\t\t\t\t\t\t\t\t|\n")    }
-                else {
+                if (j == 2) 
+                    cat ("\t\t\t\t\t\t\t\t\t|\n")
+                else 
+                {
                     nm <- part.sizesC / mvals
                     # nm values for k-means are sometimes all identical, which
                     # causes the t-test to crash, as does the odd occasion when only
                     # a single value can be extracted before the fractions drop
                     # below 0.5:
-                    if (sd (nm) == 0) {
+                    if (sd (nm) == 0)
                         stop ("\nERROR: Estimated values of N/M",
                              " are all identical---Just run again!\n")
-                    } else if (length (nm) < 2) {
+                    else if (length (nm) < 2)
                         stop ("\nERROR: Insufficient values of N/M generated",
                               "---Just run again!\n")
-                    } else {
+                    else 
+                    {
                         tt <- t.test (nm - e1)
                         tt2 <- t.test (nm - 2)
                         cat ("\t", formatC (mean (nm, na.rm=TRUE), format="f", digits=2),
@@ -388,10 +388,12 @@ clust.sig <- function (method="complete", xmax=36)
                             ")\t(", formatC (tt2$statistic, format="f", digits=4),
                             ", ", formatC (tt2$p.value, format="f", digits=4),
                             ")\t|\n", sep="")
-                        if (i == 1) {
+                        if (i == 1) 
+                        {
                             tstats [[1]] <- c (tstats [[1]], tt$statistic)
                             tstats [[2]] <- c (tstats [[2]], tt2$statistic)
-                        } else if (i == 3) {
+                        } else if (i == 3) 
+                        {
                             tstats [[3]] <- c (tstats [[3]], tt$statistic)
                             tstats [[4]] <- c (tstats [[4]], tt2$statistic)
                         }
@@ -408,11 +410,13 @@ clust.sig <- function (method="complete", xmax=36)
              sum (part.sizes), " = ", prop, "%\n\n", sep="")
 
         # The following are used for the final average summaries
-        if (meth [i] == "complete") {
+        if (meth [i] == "complete") 
+        {
             gout.hc <- c (gout.hc, gvals)
             nout.hc <- c (nout.hc, part.sizesC)
             mout.hc <- c (mout.hc, mvals)
-        } else {
+        } else 
+        {
             gout.km <- c (gout.km, gvals)
             nout.km <- c (nout.km, part.sizesC)
             mout.km <- c (mout.km, mvals)
@@ -464,10 +468,12 @@ clust.sig <- function (method="complete", xmax=36)
         cat (rep ("-", 81), "\n", sep="")
         vlist <- c ("G", "Gc", "N")
         sarr <- cbind (sG, sGC, sN, sM)
-        for (j in 1:3) {
+        for (j in 1:3) 
+        {
             cat ("|\t", vlist [j], "\t|\t")
             if (j > 1) { for (k in 1:(j-1)) { cat ("\t") }  }
-            for (k in (j+1):4) {
+            for (k in (j+1):4) 
+            {
                 tt <- t.test (sarr [,j], sarr [,k], var.equal=TRUE)
                 cat (formatC (tt$statistic, format="f", digits=3))
                 cat ("\t")
@@ -475,7 +481,8 @@ clust.sig <- function (method="complete", xmax=36)
             # Then p-values
             cat ("|")
             for (k in 1:j) { cat ("\t") }
-            for (k in (j+1):4) {
+            for (k in (j+1):4) 
+            {
                 tt <- t.test (sarr [,j], sarr [,k], var.equal=TRUE)
                 cat (formatC (tt$p.value, format="f", digits=3))
                 if (k < 4) { cat ("\t") }
@@ -504,14 +511,14 @@ clust.sig <- function (method="complete", xmax=36)
     ltys <- c (1, 2, 1, 2)
     plot (1:length (tstats [[1]]), tstats [[1]], "l", col=cols [1], lty=ltys [1],
           xlim=xlims, ylim=ylims, xlab="Number of peaks", ylab="T(M)")
-    for (i in 1:4) {        
+    for (i in 1:4)
         lines (1:length (tstats [[i]]), tstats [[i]],
                col=cols [i], lty=ltys [i], lwd=2)
-    }
     legend (xlims [1], ylims [2], lwd=2, col=cols, lty=ltys, bty="n",
             legend=c("TO(e)", "TO(2)", "FROM(e)", "FROM(2)"))
 
-    for (i in 1:2) {
+    for (i in 1:2) 
+    {
         indx <- 2 * i - 1
         # indx is then "TO/FROM(e)", while (indx+1) is "TO/FROM(2)"
         i0 <- max (which (tstats [[indx]] < tstats [[indx + 1]]))
@@ -536,7 +543,8 @@ clust.sig <- function (method="complete", xmax=36)
     nout <- list (hc=nout.hc, km=nout.km)
     mout <- list (hc=mout.hc, km=mout.km)
     snm <- NULL
-    for (i in 1:2) {
+    for (i in 1:2) 
+    {
         nm <- nout [[i]] / mout [[i]]
         tt <- t.test (nm - e1)
         cat ("*** ", txts [i], " Average N / M = ", 
@@ -554,7 +562,8 @@ clust.sig <- function (method="complete", xmax=36)
         snm <- c (snm, sn, sm)
         txt <- c ("G", "N", "M")
         cat ("Values averaged over TO and FROM:\n")
-        for (j in 1:3) {
+        for (j in 1:3) 
+        {
             cat (txt [j], " = ", formatC (mean (gvals [,j]), format="f", digits=3), 
                  " +/- ", formatC (sd (gvals [,j]), format="f", digits=3), 
                  "; s = ", formatC (mean (svals [,j], na.rm=TRUE), format="f", digits=3), 
@@ -572,22 +581,29 @@ clust.sig <- function (method="complete", xmax=36)
         cat ("\t\t|\tN\tM\t|\tN\tM\n")
         cat (rep ("-", 60), "\n", sep="")
         vlist <- c ("G", "N")
-        for (j in 1:2) {
+        for (j in 1:2) 
+        {
             cat ("\t", vlist [j], "\t|\t")
-            if (j > 1) { cat ("\t") }
-            for (k in (j+1):3) {
+            if (j > 1) 
+                cat ("\t")
+            for (k in (j+1):3) 
+            {
                 tt <- t.test (svals [,j], svals [,k], var.equal=TRUE)
                 cat (formatC (tt$statistic, format="f", digits=3))
                 cat ("\t")
             }
             # Then p-values
             cat ("|")
-            for (k in 1:j) { cat ("\t") }
-            for (k in (j+1):3) {
+            for (k in 1:j) 
+                cat ("\t")
+            for (k in (j+1):3) 
+            {
                 tt <- t.test (svals [,j], svals [,k], var.equal=TRUE)
                 cat (formatC (tt$p.value, format="f", digits=3))
-                if (k < 3) { cat ("\t") }
-                else { cat ("\n")   }
+                if (k < 3) 
+                    cat ("\t")
+                else 
+                    cat ("\n")
             }
         }
     } # end for i over (hc, km)
@@ -604,7 +620,7 @@ clust.sig <- function (method="complete", xmax=36)
     #    paper = "special", horizontal = FALSE)
 }
 
-#clust.sig ()
+clust.sig ()
 
 
 # *****************************************************************
@@ -766,8 +782,8 @@ get.clusters <- function (method="ward")
 # *****************   GET.PARTITION.NEIGHBOURS   ******************
 # *****************************************************************
 
-get.partition.neighbours <- function (nc=c(11,15), dir="from", method="complete",
-                                      plot=FALSE) {
+get.partition.neighbours <- function (city="nyc", nc=c(11,15), dir="from", 
+                                      method="complete", plot=FALSE) {
     # Identifies the clusters in min (nc) that split to form separate clusters in 
     # max (nc). For each cluster, a list element is returned with the number of
     # groups into which each connected group is subsequently partitioned.
@@ -1055,12 +1071,14 @@ num.clusts <- function (plot=FALSE, method="complete")
 # **********************   GET.NUM.CLUSTS   ***********************
 # *****************************************************************
 
-get.num.clusts <- function ()
+get.num.clusts <- function (city="nyc", method="complete")
 {
     # Just loads up the output of calc.pnc(), and returns the final numbers of
     # clusters corresponding to minimal joint probabilities of peak spacings and
     # depths.
-    dat <- read.csv ("./results/results_prob_m.txt", header=TRUE)
+    fname <- paste ("./results/", city, "-results-prob-m-", method, 
+                    ".txt", sep="")
+    dat <- read.csv (fname, header=TRUE)
     nc <- dat$nc
     dat <- dat [,14:17] # The simulated probabilities
     mini <- apply (dat, 2, which.min)
