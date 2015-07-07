@@ -5,6 +5,13 @@ VPATH=./src
 OBJECTS_NEUTRAL = ClusterData.o Utils.o ClusterCalculations.o mainNeutral.o
 OBJECTS_ACTUAL = ClusterData.o Utils.o ClusterCalculations.o mainActual.o
 
+LL=latex
+PDF=dvipdfm
+LFLAGS=-interaction=nonstopmode -shell-escape
+LFILE = aaaread-this
+
+# ------ C++ make
+
 all: mainNeutral mainActual
 
 neutral: mainNeutral
@@ -20,6 +27,21 @@ mainActual: $(OBJECTS_ACTUAL)
 %.o: %.c++
 	$(CXX) $(CFLAGS) $<
 
+# ------ latex make
+
+#latex: latex1 latex1 dvi clean
+latex: latex1 latex1 pdf clean
+
+latex1: 
+	$(LL) $(LFILE).tex $(LFLAGS) 
+
+pdf:
+	$(PDF) $(LFILE).dvi
+
+dvi:
+	dvips -P pdf -q $(LFILE).dvi
+	ps2pdf $(LFILE).ps
+
 clean:
-	rm -f *.o 
+	rm -f *.o *.dvi *.blg *.maf *.mtc *.mtc0 *.ps *.soc
 

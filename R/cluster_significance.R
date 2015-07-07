@@ -1,9 +1,9 @@
 library (devtools)
 library (roxygen2)
-setwd ("../..")
-document("sortpart")
-install ("sortpart")
-load_all ("sortpart")
+#setwd ("../..")
+#document("sortpart")
+#install ("sortpart")
+#load_all ("sortpart")
 
 # Contains the following functions:
 #   1. clust.sig - the main plotting & analysis routine
@@ -620,7 +620,7 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     #    paper = "special", horizontal = FALSE)
 }
 
-clust.sig ()
+#clust.sig ()
 
 
 # *****************************************************************

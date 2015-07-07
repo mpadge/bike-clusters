@@ -102,7 +102,9 @@ int main(int argc, char *argv[]) {
     cityCaps = city;
     std::transform (cityCaps.begin(), cityCaps.end(), 
             cityCaps.begin(), ::toupper); 
-    Clusters clusters (city);
+    // method is junk in this call:
+    std::string method = "complete";
+    Clusters clusters (city, method);
     std::cout << cityCaps << ": Number of stations = " << 
         clusters.returnNumStations () << std::endl;
 

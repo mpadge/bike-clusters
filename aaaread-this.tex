@@ -1,0 +1,115 @@
+\documentclass[a4paper,oneside]{article}
+
+\usepackage{amsmath,amssymb} % amssymb has \lesssim, etc.
+\usepackage{graphicx,pict2e,caption,multirow,cleveref}
+\usepackage{natbib}
+\usepackage{pstricks,pst-node,url}
+%\usepackage[breaklinks]{hyperref}
+
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{sfmath}
+
+\usepackage[draft,authormarkup=none,authormarkuptext=none]{changes}
+\definechangesauthor[color=red]{m}
+\setauthormarkup{} % Gets rid of superposed author id
+    % Changes has #1 = author id, #2 = remark, so footnotes only contain remarks, no author id's.
+%\setremarkmarkup{\footnote{#2}}
+
+\usepackage[left=2.54cm,right=2.54cm,top=3cm,bottom=3cm]{geometry}
+\def\CPP{{C\kern-.05em\raise.23ex\hbox{+\kern-.05em+}\hspace{4pt}}}
+
+\title{Analysis of clusters}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+The first step in analysing clusters is to convert the raw bike trip data into matrices of correlations between all station pairs. This is done
+with the ``{\bf bikes\_get\_r2\_mats.cc}'' program. The London version of this program produces the following output files:
+\begin{enumerate}
+    \item{ntrips.txt --- An [nstations$\times$nstations] matrix of numbers of trips per day}
+    \item{results\_list.txt --- A vector list of ALL results data; that is, a list containing, for each pair of stations, the station lats
+        lons, distance between, and correlations between rides ridden both from and to. Length of vector is thus [nstations$\times$nstations].
+        This file is used to subsequently calculate k-values describing Gaussian declines of correlation with distance from each station. (See
+        R routine ``calc.kvals'' below.)}
+    \item{results\_st\_latlons.txt --- Just what it says, in a matrix of length nstations}
+    \item{results\_r2\_from.txt, .\_r2\_to.txt - The actual inter-station correlation matrices.}
+\end{enumerate}
+The DC version just produces the correlation matrices, along with ``results\_st\_latlons\_DC.txt.'' In both cases, the correlation (r2) matrices
+form the input for the actual analyses of clusters, which initially uses routines from ``plotresults.R,'' which is the main R analysis script.
+It includes the following functions:
+\begin{enumerate}
+    \item{plotresults --- Plots visual clustering schemes for a given number of clusters. Relies upon ``drawlondon\_script.r.'' This is the
+        routine used to identify strange points and relocate them into more appropriate clusters using the routines below.}
+    \item{plotresults.osm} --- Dumps a hi-resolution version to file with OSM buliding polygons shaded by cluster membership. This routine
+        relies on the following two sub-routines
+    \item{add.polys} --- Adds polygons to plot
+    \item{poly.in.hull} --- Identifies which polygons lie within a given hull describing a cluster.
+    \item{swap.clust.memb --- Identifies a point within a cluster based upon whether it is that farthest point to the [N,S,E,W], and relabels
+        its cluster ID.}
+    \item{renumber.clusters --- Allows entire clusters to be renumbered, both so colours and numbering schemes align better, and so degrees of
+        cluster overlap can simply be measured by aligning clusters according to their consistent numbering schemes.}
+    \item{get.clusters --- The primary hierarchical clustering scheme, which also automatically renumbers clusters based on maximal degrees of
+        overlap}
+    \item{get.clusters2 --- Just strips out the actual clustering bit from above, without renumbering clusters, and dumps the ``merge'' field of
+        the hclust output to a file, ``hclust\_merges.txt.''}
+    \item{get.clusters3 --- Does the manual renumbering identified through the main plotresults routines, applies it for clustering schemes of
+        (currently) up to 20 clusters, and dumps the resultant clustering schemes in 2 matrices of [nstations, 20], called
+        ``clust\_from\_members.txt'' and ``.\_to\_members.txt''.}
+    \item{get.clusters.kmeans --- Dumps cluster IDs in two [nstations$\times$max\_clusters] arrays called ``kclust\_from\_members.txt'' and
+        ``.\_to\_members.txt.''}
+    \item{get.members --- Analyses the merge history produced by hclust to strip out a given number of clusters. It differs from the R internal
+        ``cutree'' routine in preventing clusters from having less than 3 members by automatically merging such clusters with the geographically
+        closest larger clusters.}
+    \item{calc.kvals --- Calculates the k-values describing Gaussian decays in correlations from each station, and dumps them to an output file,
+        along with station lats \& lons.}
+\end{enumerate}
+There is then also a DC version of plotresults, but the actual plotresults routines has not really been implemented, because DC analyses work
+even better than the London ones without any cleaning up. The DC one also does not yet have an OSM plotting option.
+
+The primary function of both plotresults routines (apart from allowing visual inspection of London clusters) is to use the correlation matrices
+to produce files detailing cluster membership. For London, this is done by get.clusters3, which produces the final
+``clust\_(from,to)\_members.txt'' files. The ``get.clusters.kmeans'' routine produces the corresponding values for comparison. The equivalents
+for DC are simply get.clusters and get.clusters.kmeans.
+
+{\bf NOTE ON K-MEANS CLUSTERING} k-means clusters are intitiated with random selection. The parameter nstart (default = 1) can be increased to
+repeat the clustering with a number of random starts, with the convergent estimate returned. Using nstart = 5 seems to give evidently more
+reliable clustering procedures than nstart = 1.
+
+The cluster membership files are then used to measure total distances ridden within each form of cluster, using 
+the \CPP program, ``clusters\_actual.cc,'' and the DC equivalent. Clustering can be done using either:
+\begin{enumerate}
+    \item{The standard hclust output}
+    \item{(London only) The hclust output with manual corrections; or}
+    \item{k-means clustering}
+\end{enumerate}
+These \CPP programs produce output files which contain 2 columns of [number of clusters, total distance ridden {\it within} clusters]. The
+equivalent program, ``clusters\_neutral.cc'' calcualtes the same values through averaging over a given number of aritrarily assigned, yet
+spatially contiguous, clusters. The present results data have been averaged over 100 repeats for each number of clusters. 
+
+These observed values of distances ridden are then statistically combined and compared in the routine ``cluster\_significance.R,'' which
+simultaneously analyses both London and DC results. The observed distances ridden are converted to T-statistics using the neutral values. These
+T-statistics are then analysed to discern the positions of all peaks, and thus the M values that best reproduces the observed series. (From
+peak $=1+N*(M-1)$). This is done using the align.peaks2 routine, with align.peaks just minimising numbers of missing observations, and kept for
+archival reasons only. (May in fact be deleted.)
+
+London produces $M\approx 4$, which is also the value produced from a random series, so that finding on its own can not be
+interpreted to mean anything. What is thus needed is also to measure the extent to which peaks really are peaks. I thus devised a routine to
+measure how distinct the peaks were, by rescaling the data using a non-linear routine to estimate upper and lower bounds, and rescaling these
+between -1 and 1. Peak distinctness is then the peak height minus the average of the two adjacent points. This value has a maximum of 2.
+
+The routine calc.pm calculates the probability distribution of peak distinction using only series fitting a given $M$-value. For a given value
+of peak distinction, it returns the probability. The probabilities of each series of peaks for that given $M$-value can thus be calculated, and
+the probability of the entire series finally calculated as the product of all individual values. The DC peaks correspond to $M=5.8$, which alone
+almost never arises from random data, and so they are entirely significant regardless. The London data are also revealed to be entirely
+significant, thus finally demonstrating the validity of the analysis.
+
+This cluster\_significance.R script also has an extra routine, ``clust.stats,'' which calculates the internal statistics of the
+clustering algorithm. This shows that these internal statistics can also discern peaks at roughly the same places as with the relative
+intra-cluster distances above. These peaks are nevertheless not as distinct, and this routine exists for reference only.
+
+A final routine, ``calc.b,'' takes a given exponent b in $\binom{N}{k} \div k ^ b$ and produces the corresponding $M$-value. This enables the
+translation of observed $M$-values into associated exponents.
+
+\end{document}
