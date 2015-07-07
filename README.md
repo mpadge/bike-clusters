@@ -2,9 +2,10 @@
 
 A collection of programs to analyse clusters within urban areas as produced by
 usage patterns of hire bicycle systems. Requires the output of
-`bike-correlations`, in particular the correlation (R2) and distance matrices.
-Currently able to analyse data from London, NYC, Boston, Chicago, and Washington
-DC, using cluster methods of `ward`, `complete`, `k-means`, and `skater`.
+[`bike-correlations`](https://github.com/mpadge/bike-correlations), in
+particular the correlation (R2) and distance matrices.  Currently able to
+analyse data from London, NYC, Boston, Chicago, and Washington DC, using cluster
+methods of `ward`, `complete`, `k-means`, and `skater`.
 
 Analyses are ultimately based on comparisons of the total distances ridden
 within clusters to equivalent distances ridden between them.
