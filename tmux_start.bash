@@ -43,6 +43,7 @@ tmux send-keys -t $SESSION:4 ':' 'tabe num-clusts.R' C-m
 tmux send-keys -t $SESSION:4 ':' 'tabe get-partition-neighbours.R' C-m
 tmux send-keys -t $SESSION:4 ':' 'tabe clust-sig.R' C-m
 tmux send-keys -t $SESSION:4 ':' 'cd ../../' C-m
+tmux send-keys -t $SESSION:4 ':' 'tabe junk.R' C-m
 
 tmux select-window -t $SESSION:1
 

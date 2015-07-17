@@ -3,7 +3,7 @@
 #' Applies quadratic regression to input series to rescale peak values between
 #' -1 and 1 
 #'
-#' @param xm input series
+#' @param xm input series (as matrix for multiple rescaling)
 #' @param rescale polynomial order of rescaling (can be > default of 2)
 #' @return vector of rescaled series
 

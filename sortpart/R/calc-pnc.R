@@ -13,9 +13,6 @@
 
 calc.pnc <- function (city = "nyc", method="complete", nrpts=100, rescale=2)
 {
-    require (data.table) # For timetaken function
-    require (quantreg) 
-
     if (tolower (substring (city, 1, 1)) == "n")
         city <- "nyc"
     else if (tolower (substring (city, 1, 1)) == "l")
@@ -37,16 +34,11 @@ calc.pnc <- function (city = "nyc", method="complete", nrpts=100, rescale=2)
         method <- "ward"
     else if (method == "s")
         method <- "skater"
-    else if (method == "k")
-        method <- "k-means"
     
-    st0 <- Sys.time ()
-    st.loop <- st0
     nrpts <- nrpts * 2 
     # Presumes M \approx 4.5, so about half of all simulated series will have the
     # right M-values, therefore nrpts is doubled.
     
-    cat ("loading data for ", city, " ", method, " ...", sep="")
     dat <- num.clusts (city=city, method=method, plot=FALSE)
     cat ("\rcalculating peak probabilities for ", city, " ", method, "\n", sep="")
     dat <- dat [[2]] 
@@ -58,12 +50,12 @@ calc.pnc <- function (city = "nyc", method="complete", nrpts=100, rescale=2)
     # in $n values, but an average value is taken for all, as specified below.
     #
     # The whole thing is run here as a loop over the 14 values of $nc = (2:15),
-    # because the actual time consuming bit is the processing internal to this
-    # loop, and it makes the code clearer.
-    pr.pk.hts <- num.samples <- array (NA, dim=c(length (dat$nc), 4))
+    # because the actual time consuming bit is the poly.rescale calls internal
+    # to this loop, and it makes the code clearer.
+    pr.pk.hts <- num.samples <- array (NA, dim=c(nrow (dat), 4))
     
     pb <- txtProgressBar (0, 100, char="=", style=3)
-    for (i in 1:length (dat$nc)) {
+    for (i in 1:nrow (dat)) {
         # First calculate the "average" length of each series:
         nvals <- as.numeric (dat [i, 10:13])
         if (length (which (nvals == min (nvals))) == 
@@ -83,7 +75,7 @@ calc.pnc <- function (city = "nyc", method="complete", nrpts=100, rescale=2)
         # First trim x down to only gvals >= min (gvals0):
         # If observed G-values are the same, run all together, else run
         # individually
-        if (sum (diff (gvals0))  == 0) { 
+        if (sum (abs (diff (gvals0)))  == 0) { 
             g <- gvals0 [1]
             indx <- which (gvals >= g)
             num.samples [i, ] <- rep (length (indx), 4)
@@ -105,9 +97,11 @@ calc.pnc <- function (city = "nyc", method="complete", nrpts=100, rescale=2)
             } else {
                 pr.pk.hts [i, ] <- 0
             }
-        } else { # G-values differ, so each is calculated separately
-            hvals0 <- as.numeric (dat [i, 6:9])
-            gh0 <- as.list (as.data.frame (rbind (gvals0, hvals0)))
+        } else { 
+            # G-values differ, so each is calculated separately. Note that this
+            # could be just repeated on unique values, but the time consuming
+            # bit is poly.rescale, so this wouldn't make any difference anyway.
+            gh0 <- as.list (as.data.frame (rbind (gvals0, pk.heights.i)))
             # gh0 is a list of four pairs of [g, h], so x [1] = g & x [2] = h.
             indx <- which (gvals >= min (gvals0))
             gvals <- gvals [indx]
@@ -140,8 +134,6 @@ calc.pnc <- function (city = "nyc", method="complete", nrpts=100, rescale=2)
         setTxtProgressBar (pb, 100 * i / length (dat$nc))
     } # end for i over the nc values
     close (pb)
-    #st <- timetaken (st0)
-    #cat ("calculation time = ", st, "\n", sep="")
     
     nrpts <- rep (nrpts, dim (dat) [1])
     dat <- cbind (dat, pr.pk.hts, nrpts, num.samples)
