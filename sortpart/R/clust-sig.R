@@ -12,9 +12,6 @@
 clust.sig <- function (city="nyc", method="complete", xmax=36)
 {
     require (quantreg) 
-    # NOTE: This seed is only to allow it to always generate appropriate k-means
-    # to get through running the whole thing. Comment out to run it properly!!
-    set.seed (18)
     
     if (tolower (substring (city, 1, 1)) == "n")
         city <- "nyc"

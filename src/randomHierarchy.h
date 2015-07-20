@@ -67,7 +67,6 @@ int getContiguousClusters (ivec *clIds, Points_with_id *pts, bmat *nbs,
         int nclusters, int nnew, base_generator_type *generator);
 ivec table (ivec *cluster_ids);
 dmat getdists (Points_with_id *pts);
-void timeout (double tseconds);
 
 
 #endif

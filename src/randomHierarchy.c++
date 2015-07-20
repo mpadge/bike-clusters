@@ -75,7 +75,6 @@ int main (int argc, char *argv []) {
     double tempd, mn, sd, tt;
     std::string fname;
     std::ofstream out_file;
-    clock_t timer[2];
     time_t seed;
     base_generator_type generator(42u);
 
@@ -83,12 +82,7 @@ int main (int argc, char *argv []) {
     int diri = atoi (argv [2]);
 
     //seed = atoi (argv [3]);
-    time (&seed);
     generator.seed (static_cast <unsigned int> (seed));
-    timer [0] = clock();
-
-    std::cout.setf (std::ios::fixed, std::ios::floatfield);
-    std::cout.precision (4);
 
     // Allocate the random points with CGAL:
     const int numPoints = npts;
@@ -111,50 +105,56 @@ int main (int argc, char *argv []) {
 
     // I've not yet figured out how to use boost::assign to fill a boost vector - it
     // only seems to work with std::vector!
-    ivec numClusters (6), numContig (6), numTot (6);
+    int numClusts;
+    ivec numClusters, numContig, numTot;
     if (diri == 0) 
     {
+        numClusts = 6;
+        numClusters.resize (numClusts); 
+        numContig.resize (numClusts);
+        numTot.resize (numClusts);
         std::cout << "Calculating " << num_repeats << 
             " random clusters for direction = FROM:" << std::endl;
-        numClusters (0) = 3;
-        numClusters (1) = 8;
-        numClusters (2) = 11;
-        numClusters (3) = 15;
-        numClusters (4) = 20;
-        numClusters (5) = 24;
+        numClusters (0) = 4;
+        numClusters (1) = 7;
+        numClusters (2) = 9;
+        numClusters (3) = 12;
+        numClusters (4) = 16;
+        numClusters (5) = 20;
         numContig (0) = 2;
         numContig (1) = 3;
-        numContig (2) = 4;
-        numContig (3) = 5;
+        numContig (2) = 2;
+        numContig (3) = 3;
         numContig (4) = 3;
-        numContig (5) = 1;
+        numContig (5) = 4;
         numTot (0) = 2;
         numTot (1) = 3;
-        numTot (2) = 4;
-        numTot (3) = 5;
-        numTot (4) = 3;
-        numTot (5) = 2;
+        numTot (2) = 2;
+        numTot (3) = 3;
+        numTot (4) = 4;
+        numTot (5) = 4;
     } else {
+        numClusts = 5;
+        numClusters.resize (numClusts); 
+        numContig.resize (numClusts);
+        numTot.resize (numClusts);
         std::cout << "Calculating " << num_repeats << 
             " random clusters for direction = TO:" << std::endl;
         numClusters (0) = 4;
         numClusters (1) = 8;
-        numClusters (2) = 11;
-        numClusters (3) = 15;
-        numClusters (4) = 20;
-        numClusters (5) = 23;
+        numClusters (2) = 12;
+        numClusters (3) = 16;
+        numClusters (4) = 19;
         numContig (0) = 2;
         numContig (1) = 3;
         numContig (2) = 2;
         numContig (3) = 4;
-        numContig (4) = 2;
-        numContig (5) = 2;
+        numContig (4) = 3;
         numTot (0) = 2;
         numTot (1) = 3;
         numTot (2) = 3;
-        numTot (3) = 5;
+        numTot (3) = 4;
         numTot (4) = 3;
-        numTot (5) = 4;
     }
 
     ivec counts (numClusters.size ());
@@ -208,11 +208,6 @@ int main (int argc, char *argv []) {
 
     nbs.resize (0, 0);
     distmat.resize (0, 0);
-
-    timer[1] = clock() - timer[0];
-    std::cout<<"Total Calculation Time = ";
-    timeout(timer[1] / ((double)CLOCKS_PER_SEC));
-    std::cout<<std::endl;
 
     return 0;
 }
@@ -576,43 +571,3 @@ dmat getdists (Points_with_id *pts)
 
     return distmat;
 }
-
-
-/************************************************************************
- ************************************************************************
- **                                                                    **
- **                             TIMEOUT                                **
- **                                                                    **
- ************************************************************************
- ************************************************************************/
-
-void timeout(double tseconds)
-{
-    int hh = floor(tseconds / 3600.0);
-
-    if (hh == 0) 
-        std::cout<<"00:";
-    else if (hh < 10) 
-        std::cout<<"0"<<hh<<":";
-    else 
-        std::cout<<hh<<":";
-
-    double trem = tseconds - (double) hh * 3600.0;
-    int mm = floor(trem / 60.0);
-
-    if (mm == 0) 
-        std::cout<<"00:";
-    else if (mm < 10) 
-        std::cout<<"0"<<mm<<":";
-    else 
-        std::cout<<mm<<":";
-
-    double ss = trem - (double) mm * 60.0;
-
-    if (ss == 0.0) 
-        std::cout<<"00:";
-    else if (ss < 10) 
-        std::cout<<"0"<<ss;
-    else 
-        std::cout<<ss;
-} // end function timeout

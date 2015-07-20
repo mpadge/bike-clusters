@@ -50,10 +50,22 @@ get.num.clusts <- function (city="nyc", method="complete")
     dat <- read.csv (fname, header=TRUE)
     nc <- dat$nc
     dat <- dat [,14:17] # The simulated probabilities
-    #mini <- apply (dat, 2, which.min)
-    # Exclude the first peak from potential minima
-    mini <- 1 + apply (dat [2:dim(dat)[1],], 2, which.min)
 
+    if (city == "chicago" | city == "london")
+    {
+        # These lines equate numbers of clusters with minimal probabilities
+        # (excluding the first peak, which is sometimes the minimum).
+        mini <- 1 + apply (dat [2:dim(dat)[1],], 2, which.min)
+    } else {
+        # Whereas more peaks are included if the number is selected from the
+        # largest peak with p < p0 (=0.05).
+        p0 <- 0.05
+        # with a couple of manual tweaks
+        if (city == "nyc" | city == "boston")
+            p0 <- 0.057
+        mini <- apply (dat, 2, function (x) which (x < p0))
+        mini <- sapply (mini, max)
+    }
     mini.indx <- (0:3) * dim (dat) [1] + mini
     dat.mini <- as.matrix (dat) [mini.indx]
 
