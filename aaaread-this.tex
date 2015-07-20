@@ -111,7 +111,11 @@ For any given city and clustering method, the analyses requires the following st
     \item {\tt >./ClustersActual city}
     \item {\tt R> calc.pnc (city, method, nrpts$\sim$100,000)}
     \item {\tt R> clust.sig (city, method)}
+    \item {\tt >./rhier}
 \end{enumerate}
+The last of these ({\tt rhier}) is a \CPP routine that calculates probabilities of randomly generating clusters with the largest contiguous
+component equal to or larger than the observed sizes of contiguous components. These latter sizes must be entered manually in the code, which
+must be re-compiled for each city. (There are generally only a handful of entries, so this is a simple work-around.)
 
 
 \end{document}

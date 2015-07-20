@@ -26,5 +26,6 @@ All calculations are repeated for a range of numbers of clusters (up to 100).
 4. `>./ClustersActual city`
 5. `R> calc.pnc (city, method`
 6. `R> clust.sig (city, method)`
+7. `>/randomClusters` (requires manual entry of reference numbers)
 
 See `aaaread-this` for further details.
