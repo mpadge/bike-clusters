@@ -158,23 +158,26 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
 
     # Then plot re-scaled versions of hclust results
     indx <- which (xdat <= xmax)
-    y.resc <- ulbounds <- array (NA, dim=c(length (indx), 2))
-    for (j in 1:2) { # Over (to, from) data
-        dfr <- data.frame (x=xdat [indx], y=t0 [indx, j])
+    ulbounds <- array (NA, dim=c(length (indx), 2))
+    y.resc <- array (NA, dim=c(length (indx), 4))
+    ytemp <- cbind (t0 [indx, 1], tk [indx, 1], t0 [indx, 2], tk [indx, 2])
+    for (j in 1:4) { # (to-complete, to-k-means, from-complete, from-k-means)
+        #dfr <- data.frame (x=xdat [indx], y=t0 [indx, j])
+        dfr <- data.frame (x=xdat [indx], y=ytemp [, j])
         for (k in 1:2) {
             mod <- nlrq (y ~ a * x ^ 2 + b * x + cc, data=dfr, 
                 tau=ybounds [k], start=list(a=0, b=0, cc=mean(dfr$y)))
             ulbounds [,k] <- predict (mod, newdata=dfr$x)
         } # end for k
-        y.resc [, j] <- 2 * (t0 [indx, j] - ulbounds [,2]) /
+        y.resc [, j] <- 2 * (ytemp [, j] - ulbounds [,2]) /
             (ulbounds [,1] - ulbounds [,2]) - 1
     } # end for j
-    plot (xdat [indx], y.resc [,1], "l", col=cols [1], lwd=2, ylim=range (y.resc),
+    plot (xdat [indx], y.resc [,1], "l", col=cols [1], lwd=1, ylim=range (y.resc),
           ylab="Rescaled T-values", main="Rescaled T-values")
     for (i in 1:25)
         lines (rep (i*4, 2), range (y.resc), col="gray", lty=2)
-    for (i in 1:2)
-        lines (xdat [indx], y.resc [,i], col=cols [i], lwd=2)
+    for (i in 1:4)
+        lines (xdat [indx], y.resc [,i], col=cols [ceiling (i/2)], lty=2-(i%%2))
 
 
     # *************************************************************************
@@ -296,9 +299,9 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
                 {
                     nm <- part.sizesC / mvals
                     # nm values for k-means are sometimes all identical, which
-                    # causes the t-test to crash, as does the odd occasion when only
-                    # a single value can be extracted before the fractions drop
-                    # below 0.5:
+                    # causes the t-test to crash, as does the odd occasion when
+                    # only a single value can be extracted before the fractions
+                    # drop below 0.5:
                     if (sd (nm) == 0)
                         stop ("\nERROR: Estimated values of N/M",
                              " are all identical---Just run again!\n")
@@ -448,34 +451,43 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     } # end for i
 
     # ********************* PLOT T-STATISTICS ***********************
-    tstats <- lapply (tstats, function (x) abs (x))
-    ylims <- lapply (tstats, function (x) range (abs (x)))
-    ylims <- range (unlist (ylims))
-    xmax <- lapply (tstats, function (x) length (x))
-    xlims <- c (1, max (unlist (xmax)))
-    cols <- c ("red", "red", "blue", "blue")
-    ltys <- c (1, 2, 1, 2)
-    plot (1:length (tstats [[1]]), tstats [[1]], "l", col=cols [1], lty=ltys [1],
-          xlim=xlims, ylim=ylims, xlab="Number of peaks", ylab="T(M)")
-    for (i in 1:4)
-        lines (1:length (tstats [[i]]), tstats [[i]],
-               col=cols [i], lty=ltys [i], lwd=2)
-    legend (xlims [1], ylims [2], lwd=2, col=cols, lty=ltys, bty="n",
-            legend=c("TO(e)", "TO(2)", "FROM(e)", "FROM(2)"))
-
-    for (i in 1:2) 
+    #
+    # These are T-statistics for respective distances to e and 2. Statistics are
+    # only generated as along as the largest contiguous component represents the
+    # majority of all new clusters. If this condition fails by the second peak,
+    # then only one T-value will be generated for that series and there will
+    # thus be nothing to plot.
+    if (max (sapply (tstats, length)) > 1)
     {
-        indx <- 2 * i - 1
-        # indx is then "TO/FROM(e)", while (indx+1) is "TO/FROM(2)"
-        i0 <- max (which (tstats [[indx]] < tstats [[indx + 1]]))
-        m1 <- tstats [[indx]] [i0 + 1] - tstats [[indx]] [i0]
-        m2 <- tstats [[indx + 1]] [i0 + 1] - tstats [[indx + 1]] [i0 + 1]
-        c1 <- tstats [[indx]] [i0] - m1 * i0
-        c2 <- tstats [[indx + 1]] [i0] - m2 * i0
-        x0 <- (c2 - c1) / (m1 - m2)
-        y0 <- m1 * x0 + c1
-        points (x0, y0, pch=19, col=cols [indx])
-        lines (rep (x0, 2), c (0, y0), col=cols [indx], lty=3)
+        tstats <- lapply (tstats, function (x) abs (x))
+        ylims <- lapply (tstats, function (x) range (abs (x)))
+        ylims <- range (unlist (ylims))
+        xmax <- lapply (tstats, function (x) length (x))
+        xlims <- c (1, max (unlist (xmax)))
+        cols <- c ("red", "red", "blue", "blue")
+        ltys <- c (1, 2, 1, 2)
+        plot (1:length (tstats [[1]]), tstats [[1]], "l", col=cols [1], lty=ltys [1],
+              xlim=xlims, ylim=ylims, xlab="Number of peaks", ylab="T(M)")
+        for (i in 1:4)
+            lines (1:length (tstats [[i]]), tstats [[i]],
+                   col=cols [i], lty=ltys [i], lwd=2)
+        legend (xlims [1], ylims [2], lwd=2, col=cols, lty=ltys, bty="n",
+                legend=c("TO(e)", "TO(2)", "FROM(e)", "FROM(2)"))
+
+        for (i in 1:2) 
+        {
+            indx <- 2 * i - 1
+            # indx is then "TO/FROM(e)", while (indx+1) is "TO/FROM(2)"
+            i0 <- max (which (tstats [[indx]] < tstats [[indx + 1]]))
+            m1 <- tstats [[indx]] [i0 + 1] - tstats [[indx]] [i0]
+            m2 <- tstats [[indx + 1]] [i0 + 1] - tstats [[indx + 1]] [i0 + 1]
+            c1 <- tstats [[indx]] [i0] - m1 * i0
+            c2 <- tstats [[indx + 1]] [i0] - m2 * i0
+            x0 <- (c2 - c1) / (m1 - m2)
+            y0 <- m1 * x0 + c1
+            points (x0, y0, pch=19, col=cols [indx])
+            lines (rep (x0, 2), c (0, y0), col=cols [indx], lty=3)
+        }
     }
 
     # ********************** SUMMARIES OF ALL FOUR ANALYSES ********************
@@ -493,10 +505,12 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     {
         nm <- nout [[i]] / mout [[i]]
         tt <- t.test (nm - e1)
+        tt2 <- t.test (nm - 2)
         cat ("*** ", txts [i], " Average N / M = ", 
              formatC (mean (nm, na.rm=TRUE), format="f", digits=2),
              " +/- ", formatC (sd (nm, na.rm=TRUE), format="f", digits=2),
              ": p (N/M=e) = ", formatC (tt$p.value, format="f", digits=4),
+             ", p (N/M=2) = ", formatC (tt2$p.value, format="f", digits=4),
              "\n", sep="")
 
         sg <- 1 / log (e1 * gout [[i]]/ (e1 - 1))
@@ -516,11 +530,6 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
                  " +/- ", formatC (sd (svals [,j], na.rm=TRUE), format="f", digits=3), 
                  "\n", sep="")
         }
-        nm <- gvals [,2] / gvals [,3]
-        tt <- t.test (nm - e1)
-        cat ("  ***** N / M = ", formatC (mean (nm), format="f", digits=3), " +/- ",
-             formatC (sd (nm), format="f", digits=3), ": p(N/M=e) = ",
-             formatC (tt$p.value, format="f", digits=4), "\n", sep="")
 
         cat ("T-statistics for differences in s-values:\n")
         cat ("\t\t|\tStatistic\t|\tp-value\n")
@@ -552,6 +561,7 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
                     cat ("\n")
             }
         }
+        cat ("\n")
     } # end for i over (hc, km)
     cat ("\n***** FINAL SORTING EFFICIENCY = ",
          formatC (mean (snm, na.rm=TRUE), format="f", digits=4), " +/- ",

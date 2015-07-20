@@ -21,6 +21,8 @@ tmux new-window -t $SESSION:2 -n routines1
 tmux select-window -t $SESSION:2
 tmux send-keys -t $SESSION:2 'vim Utils.h' C-m
 tmux send-keys -t $SESSION:2 ':' 'tabe Utils.c++' C-m
+tmux send-keys -t $SESSION:2 ':' 'tabe randomHierarchy.h' C-m
+tmux send-keys -t $SESSION:2 ':' 'tabe randomHierarchy.c++' C-m
 
 tmux split-window -h
 tmux select-pane -t 0

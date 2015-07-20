@@ -122,6 +122,7 @@ num.clusts <- function (city="nyc", plot=FALSE, method="complete")
     } # end for i
     
     if (plot) {
+        p0 <- 0.05 # plots a horizontal reference line
         fname <- paste ("./results/", city, "-results-prob-m-", method,
                         ".txt", sep="")
         if (file.exists (fname))
@@ -149,6 +150,7 @@ num.clusts <- function (city="nyc", plot=FALSE, method="complete")
                 points (np.lim, ydat [[i]] [,j], col=cols [j], pch=19)
             }
             if (i == 3) { # Highlight minimal-probability points
+                lines (range (np.lim), rep (p0, 2), col="gray", lwd=2, lty=2)
                 mini <- apply (ydat [[i]], 2, which.min)
                 # Adjust from-hclust to exclude first point:
                 mini [3] <- 1 + which.min (ydat [[i]] [2:dim (ydat [[i]])[1], 3])

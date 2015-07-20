@@ -1,9 +1,12 @@
 if [[-z "$CXX"]]; then CXX='c++'
+CXX=clang++-3.5
 CFLAGS=-c -std=c++11
 LIBS=
+RHLIBS=-lCGAL -lgmp
 VPATH=./src
 OBJECTS_NEUTRAL = ClusterData.o Utils.o ClusterCalculations.o mainNeutral.o
 OBJECTS_ACTUAL = ClusterData.o Utils.o ClusterCalculations.o mainActual.o
+OBJECTS_RANDOM = randomHierarchy.o Utils.o
 
 LL=latex
 PDF=dvipdfm
@@ -12,7 +15,7 @@ LFILE = aaaread-this
 
 # ------ C++ make
 
-all: mainNeutral mainActual
+all: mainNeutral mainActual random
 
 neutral: mainNeutral
 
@@ -23,6 +26,9 @@ mainNeutral: $(OBJECTS_NEUTRAL)
 
 mainActual: $(OBJECTS_ACTUAL)
 	$(CXX) $(OBJECTS_ACTUAL) -o ClustersActual $(LIBS) 
+
+random: $(OBJECTS_RANDOM)
+	$(CXX) $(OBJECTS_RANDOM) $(RHLIBS) -o rhier 
 
 %.o: %.c++
 	$(CXX) $(CFLAGS) $<
