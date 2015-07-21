@@ -59,7 +59,8 @@
  ***************************************************************************/
 #include "mainActual.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) 
+{
 
     bool dir_to;
     int count, dir_to_i;

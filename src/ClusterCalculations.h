@@ -93,9 +93,18 @@ class Clusters : public ClusterData
             clusterIDs.resize (0);
         }
 
-        int returnMaxClustSize () { return _MAX_CLUST_SIZE;    }
-        int returnNumRepeats () { return _NUM_REPEATS; }
-        std::string returnMethod () { return _method;   }
+        int returnMaxClustSize () 
+        {
+            return _MAX_CLUST_SIZE; 
+        }
+        int returnNumRepeats () 
+        {
+            return _NUM_REPEATS;
+        }
+        std::string returnMethod () 
+        {
+            return _method; 
+        }
 
         int allocateClusters (base_generator_type * generator);
         int readClusters (bool dir_to, int trialNum = -1);

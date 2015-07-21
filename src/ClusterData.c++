@@ -362,8 +362,7 @@ int ClusterData::readNTrips ()
             linetxt = linetxt.substr (ipos + 1, linetxt.length () - ipos - 1);
         }
         assert (jx == (_numStations - 1));
-        ntrips (ix, jx++) = atof (linetxt.c_str ());
-        ix++;
+        ntrips (ix++, jx) = atof (linetxt.c_str ());
     } 
     in_file.close();
 

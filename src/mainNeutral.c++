@@ -60,7 +60,8 @@
 
 #include "mainNeutral.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) 
+{
 
     int tempi;
     double tempd, sum_mn, sum_sd;
@@ -113,10 +114,12 @@ int main(int argc, char *argv[]) {
     std::cout << "writing to file:" << fname.c_str () << std::endl;
     std::cout << "Cluster size " << std::endl;
     out_file << "nc,\tdmn,\tdsd" << std::endl;
-    for (int nc=2; nc <= clusters.returnMaxClustSize (); nc++) {
+    for (int nc=2; nc <= clusters.returnMaxClustSize (); nc++) 
+    {
         clusters.numClusters = nc;
         sum_mn = sum_sd = 0.0;
-        for (int i=0; i<clusters.returnNumRepeats (); i++) {
+        for (int i=0; i<clusters.returnNumRepeats (); i++) 
+        {
             tempi = clusters.allocateClusters (&generator);
             clustDists = clusters.calcClusterDists ();
             sum_mn += clustDists.d_in;

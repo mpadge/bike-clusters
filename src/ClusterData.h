@@ -118,10 +118,22 @@ class ClusterData
             clusterIDs.resize (0);
         }
 
-        std::string returnDirName () { return _dirName; }
-        std::string returnCity () { return _city;   }
-        int returnNumStations () { return _numStations; }
-        int returnMaxStation () { return _maxStation;   }
+        std::string returnDirName ()
+        {
+            return _dirName;
+        }
+        std::string returnCity () 
+        {
+            return _city;
+        }
+        int returnNumStations () 
+        {
+            return _numStations;
+        }
+        int returnMaxStation () 
+        {
+            return _maxStation; 
+        }
         
         std::string GetDirName ();
         int GetStations ();

@@ -107,29 +107,35 @@ int Clusters::allocateClusters (base_generator_type*  generator)
        boost::variate_generator <base_generator_type&,
        boost::normal_distribution <> > rnorm ((*generator), norm_dist); */
     // Burn generator in
-    for (int i=0; i<20; i++) { tempd = runif ();	}
+    for (int i=0; i<20; i++) 
+        tempd = runif ();
 
-    for (int i=0; i<_numStations; i++) clusterIDs (i) = INT_MIN;
+    for (int i=0; i<_numStations; i++) 
+        clusterIDs (i) = INT_MIN;
     count [0] = _numStations;
-    // Set up cluster centres
-    for (int i=0; i<numClusters; i++) {
+    // Set up cluster centres. IDs have to run from one, because the london IDs
+    // have some NAs (missing station data), which are atoi'd as ID=0.
+    for (int i=1; i<=numClusters; i++) 
+    {
         tempi = floor (runif () * _numStations);
-        while (clusterIDs (tempi) > INT_MIN) {
+        while (clusterIDs (tempi) > INT_MIN)
             tempi = floor (runif () * _numStations);
-        }
         clusterIDs (tempi) = i;
         count [0]--;
     }
     // The allocate the remaining points
-    while (count [0] > 0) {
+    while (count [0] > 0) 
+    {
         tempi = INT_MAX;
         this_cluster = INT_MIN;
-        for (int i=0; i<numClusters; i++) {
+        for (int i=1; i<=numClusters; i++) 
+        {
             count [1] = 0;
-            for (int j=0; j<_numStations; j++) {
-                if (clusterIDs (j) == i) { count [1]++;    }
-            }
-            if (count [1] < tempi) {
+            for (int j=0; j<_numStations; j++)
+                if (clusterIDs (j) == i) 
+                    count [1]++;
+            if (count [1] < tempi) 
+            {
                 tempi = count [1];
                 this_cluster = i;
             }
@@ -138,29 +144,35 @@ int Clusters::allocateClusters (base_generator_type*  generator)
         // lines finding all points that are closer to that cluster than to any
         // other.
         pt_list.resize (0);
-        for (int i=0; i<_numStations; i++) {
-            if (clusterIDs (i) == INT_MIN) {
+        for (int i=0; i<_numStations; i++) 
+            if (clusterIDs (i) == INT_MIN) 
+            {
                 tempd = DOUBLE_MAX; 
                 tempi = INT_MIN;
-                // The search for closest point to i that is in a cluster, and get
-                // cluster_num.
-                for (int j=0; j<_numStations; j++) {
-                    if (clusterIDs (j) > INT_MIN && dists (i, j) < tempd) {
+                // The search for closest point to i that is in a cluster, and
+                // get cluster_num.
+                for (int j=0; j<_numStations; j++)
+                    if (clusterIDs (j) > 0 && dists (i, j) < tempd) {
                         tempd = dists (i, j);
                         tempi = j;
                     }
-                } // end for j - tempi is the closest point to i that is in a cluster.
-                if (clusterIDs (tempi) == this_cluster) {
+                // end for j - tempi is the closest point to i that is in a
+                // cluster.
+                if (clusterIDs (tempi) == this_cluster)
                     pt_list.push_back (i);
-                }
             }
-        } // end for i
-        if (pt_list.size () == 0) { // Then just select a random point
+        if (pt_list.size () == 0) // Then just select a random point
+        { 
             tempi = floor (runif () * count [0]);
             count [1] = 0;
-            for (int i=0; i<_numStations; i++) {
-                if (clusterIDs (i) == INT_MIN) { count [1]++;  }
-                if (count [1] == tempi) {
+            for (int i=0; i<_numStations; i++) 
+            {
+                // This value has to be INT_MIN, because ID==0 can not be
+                // allocated.
+                if (clusterIDs (i) == INT_MIN) 
+                    count [1]++;
+                if (count [1] == tempi) 
+                {
                     tempi = count [1];
                     break;
                 }
@@ -168,24 +180,23 @@ int Clusters::allocateClusters (base_generator_type*  generator)
             // tempi is then the random point not in a cluster, and is directly indexed
             // into clusterIDs. The next lines find the nearest cluster.
             dmin = DOUBLE_MAX;
-            for (int i=0; i<_numStations; i++) {
-                if (clusterIDs (i) > INT_MIN && dists (tempi, i) < dmin) {
+            for (int i=0; i<_numStations; i++)
+                if (clusterIDs (i) > 0 && dists (tempi, i) < dmin) 
+                {
                     dmin = dists (tempi, i);
                     nearest_in = i;
                     this_cluster = clusterIDs (i);
                 } // end if
-            } // end for i
             // Then find point closest to nearest_in that is not in a cluster. This
             // may or may not be the same as tempi above.
             dmin = DOUBLE_MAX;
-            for (int i=0; i<_numStations; i++) {
-                if (clusterIDs (i) == INT_MIN && dists (nearest_in, i) < dmin) {
+            for (int i=0; i<_numStations; i++)
+                if (clusterIDs (i) == INT_MIN && dists (nearest_in, i) < dmin) 
+                {
                     dmin = dists (nearest_in, i);
                     tempi = i;
                 }
-            } // end for i
-        }
-        else { // Pick random point from pt_list 
+        } else { // Pick random point from pt_list 
             tempi = floor (runif () * pt_list.size ());
             tempi = pt_list [tempi];
         } // end else
@@ -239,19 +250,25 @@ int Clusters::readClusters (bool dir_to, int trialNum)
     in_file.clear ();
     in_file.seekg (0);
     count = 0;
-    while (getline (in_file, linetxt, '\n')) {
-        for (int i=2; i<numClusters; i++) {
+    while (getline (in_file, linetxt, '\n')) 
+    {
+        for (int i=2; i<numClusters; i++) 
+        {
             ipos = linetxt.find (',', 0);
             linetxt = linetxt.substr (ipos + 1, linetxt.length () - ipos - 1);
         }
         ipos = linetxt.find (',', 0);
-        clusterIDs (count) = atoi (linetxt.substr (0, ipos).c_str ());
-        count++;
+        clusterIDs (count++) = atoi (linetxt.substr (0, ipos).c_str ());
+        // Note that london has some stations that have no lat-lons or
+        // distances, and thus can not be allocated. ClusterIDs in these
+        // instances are "NA" in the "clust-...-members" files, which are
+        // accordingly read in atoi form as 0.
     } // end while getline
     in_file.close ();
 
     return 0;
 } // end function allocateClusters
+
 
 /************************************************************************
  ************************************************************************
@@ -267,37 +284,43 @@ distStats Clusters::calcClusterDists ()
     double dist_in, dist_out, tempd;
     distStats clustDists;
 
-    // Note that distance matrices do contain NA values set as DOUBLE_MIN
+    // First count total distance within and between all clusters.
+    // Note that distance matrices contain NA values set as DOUBLE_MIN
+    // There are also clusters with ID==0, corresponding to NAs in the
+    // membership files because they lack distance or location info.
     clustDists.meanProp = clustDists.sdProp = 0.0;
     clustDists.d_in = clustDists.d_out = 0.0;
-    for (int i=0; i<_numStations; i++) {
-        for (int j=0; j<_numStations; j++) {
-            if (ntrips (i, j) > 0.0 && dists (i, j) >= 0.0) {
+    for (int i=0; i<_numStations; i++)
+        for (int j=0; j<_numStations; j++)
+            if (ntrips (i, j) > 0.0 && dists (i, j) >= 0.0 &&
+                    clusterIDs (i) > 0 && clusterIDs (j) > 0)
+            {
                 tempd = ntrips (i, j) * dists (i, j);
                 if (clusterIDs (i) == clusterIDs (j))
                     clustDists.d_in += tempd;
                 else
                     clustDists.d_out += tempd;
             } // end if ntrips > 0.0
-        } // end for j
-    } // end for i
 
-    for (int i=0; i<numClusters; i++) {
+    // Then calculate mean and SD distances within and out of each cluster
+    for (int i=1; i<=numClusters; i++) 
+    {
         dist_in = dist_out = 0.0;
-        for (int j=0; j<_numStations; j++) {
-            for (int k=0; k<_numStations; k++) {
-                if (ntrips (j, k) > 0.0 && dists (j, k) >= 0.0) {
+        for (int j=0; j<_numStations; j++)
+            for (int k=0; k<_numStations; k++) 
+            {
+                if (ntrips (j, k) > 0.0 && dists (j, k) >= 0.0 && 
+                    clusterIDs (j) > 0 && clusterIDs (k) > 0)
+                {
                     tempd = ntrips (j, k) * dists (j, k);
-                    if (clusterIDs (j) == i && clusterIDs (k) == i) {
+                    if (clusterIDs (j) == i && clusterIDs (k) == i)
                         dist_in += tempd;
-                    }
-                    else if (clusterIDs (j) == i || clusterIDs (k) == i) {
+                    else if (clusterIDs (j) == i || clusterIDs (k) == i)
                         dist_out += tempd;
-                    }
                 } // end if ntrips > 0
             } // end for k
-        } // end for j
-        if (dist_in > 0.0 || dist_out > 0.0) {
+        if (dist_in > 0.0 || dist_out > 0.0) 
+        {
             count++;
             tempd = dist_in / (dist_in + dist_out);
             clustDists.meanProp += tempd;
@@ -307,7 +330,8 @@ distStats Clusters::calcClusterDists ()
     clustDists.meanProp = clustDists.meanProp / (double) count;
     clustDists.sdProp = clustDists.sdProp / (double) count - 
         clustDists.meanProp * clustDists.meanProp;
-    clustDists.sdProp = clustDists.sdProp * (double) count / ((double) count - 1.0);
+    clustDists.sdProp = clustDists.sdProp * (double) count / 
+        ((double) count - 1.0);
     clustDists.sdProp = sqrt (clustDists.sdProp);
     clustDists.d_total = clustDists.d_in + clustDists.d_out;
 
