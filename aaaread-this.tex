@@ -69,7 +69,9 @@ remaining analyses can be run reasonably quickly.
 
 Along with the above-mentioned {\tt calc.pnc}, {\tt sortpart} contains the following routines (in alphbetical order):\\
 \begin{enumerate}
-    \item {\tt calc.pnc : function (city = `nyc', method = `complete',\\ nrpts = 100, rescale = 2)}
+    \item {\tt calc.pnc : function (city = `nyc', method = `complete',\\ nrpts = 100, rescale = 2)}\\ Calculates probabilities of peak heights as
+            returned from the num.clusts () function.  If is.na (dat), then the table is called internally. To generate useful statistics, this
+            function should be run with a VERY large number of repeats (for example, 100,000), which will take a LONG time!
     \item {\tt clust.sig : function (city = `nyc', method = `complete', xmax = 36)}\\ Produces the final statistical summary of results for
         a given city and clustering method, which is the ultimate object of the entire analysis.
     \item {\tt get.clusters : function (city = `nyc', method = `ward', trial = ``)}\\
@@ -99,6 +101,7 @@ Along with the above-mentioned {\tt calc.pnc}, {\tt sortpart} contains the follo
     \item {\tt poly.rescale : function (xm, rescale = 2)}\\
         Applies quadratic regression to input series to rescale peak values between -1 and 1.
 \end{enumerate}
+\pagebreak
 
 
 \section{The Entire Procedure}

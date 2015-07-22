@@ -61,6 +61,7 @@ get.num.clusts <- function (city="nyc", method="complete")
         # largest peak with p < p0 (=0.05).
         p0 <- 0.05
         # with a couple of manual tweaks
+        # TODO: Check whether these are necessary with the new results!
         if (city == "nyc" | city == "boston")
             p0 <- 0.057
         mini <- apply (dat, 2, function (x) which (x < p0))

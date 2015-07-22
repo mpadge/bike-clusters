@@ -159,7 +159,6 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     y.resc <- array (NA, dim=c(length (indx), 4))
     ytemp <- cbind (t0 [indx, 1], tk [indx, 1], t0 [indx, 2], tk [indx, 2])
     for (j in 1:4) { # (to-complete, to-k-means, from-complete, from-k-means)
-        #dfr <- data.frame (x=xdat [indx], y=t0 [indx, j])
         dfr <- data.frame (x=xdat [indx], y=ytemp [, j])
         for (k in 1:2) {
             mod <- nlrq (y ~ a * x ^ 2 + b * x + cc, data=dfr, 
@@ -187,7 +186,7 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     npeaks <- get.num.clusts () # returns $num.clusts and $pmin (each of len=4)
     # The following are for subsequent analyses of mean values
     gout.hc <- gout.km <- nout.hc <- nout.km <- mout.hc <- mout.km <- NULL 
-    meth <- rep (c ("complete", "k-means"), 2) # for get.partition.neighbours
+    meth <- rep (c (method, "k-means"), 2) # for get.partition.neighbours
     dirs <- c (rep ("to", 2), rep ("from", 2)) # ditto
 
     # Calculate how distinct the peaks are. This is done by first rescaling the
@@ -210,8 +209,8 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
         # Find the position of the final peak (determined by npeaks), and fit the
         # nlrq lines only to that point.
         pks <- which (diff (sign (diff (tvals [,i]))) == -2) + 1
-        if (length (pks) > npeaks$num.clusts [i]) { 
-            pks <- pks [1:npeaks$num.clusts [i]]   }
+        if (length (pks) > npeaks$num.clusts [i])
+            pks <- pks [1:npeaks$num.clusts [i]]
         indx <- 1:max (pks)
         ulbounds <- array (NA, dim=c(length (indx), 2))
 
@@ -245,21 +244,25 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
         s <- mean (svals)
         nstars <- length (pks) * 3 + 46
         cat (rep ("*", nstars), "\n", sep="")
-        cat ("********** T-VALUE PEAKS", ttxt [i], "= ", xdat [pks], "**********\n")
+        cat ("********** T-VALUE PEAKS", ttxt [i], "= ", 
+             xdat [pks], "**********\n", sep="")
         cat (rep ("*", nstars), "\n", sep="")
         cat ("\tG = ", formatC (g, format="f", digits=3), " +/- ",
              formatC (sd (gvals), format="f", digits=3), "; s = ",
              formatC (s, format="f", digits=3), " +/- ",
              formatC (sd (svals), format="f", digits=3), "\n", sep="")
 
-        # Analyse partition hierarchy:
-        cat ("Sizes of new partitions formed from",
-             "contiguous (c) and all (a) neighbours:\n")
-        cat (" npks\tstage\t|\tN(c/a)\tM(c/a)\tN / M\t\t[T,p(N/M=e)]\t\t[T,p(N/M=2)]\t\t|\n")
-        cat (rep ("-", 105), "\n", sep="")
+        # Analyse partition hierarchy. part.sizes are the sums of sizes of all
+        # new partitions regardless of where they are; part.sizesC is same but
+        # only for contiguous partitions; mvals are largest sums of part.sizesC.
         # Note that partition size and merge calculations exclude the initial
         # partition from 1 to xdat [pks] [1].
         part.sizesC <- part.sizes <- mvals <- NULL
+        cat ("Sizes of new partitions formed from",
+             "contiguous (c) and all (a) neighbours:\n")
+        cat (" npks\tstage\t|\tN(c/a)\tM(c/a)\tN / M",
+             "\t\t[T,p(N/M=e)]\t\t[T,p(N/M=2)]\t\t|\n", sep="")
+        cat (rep ("-", 105), "\n", sep="")
         for (j in 2:length (xdat [pks])) 
         {
             nci <- c (xdat [pks] [j-1], xdat [pks] [j])
@@ -278,56 +281,72 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
             # than the theoretically predicted value of 2.7. 
             # ------------------------------------------------
 
-            # Only analyse as long as the biggest contiguous partition represents
-            # the majority of all new partitions:
-            nfrac <- sum (nbs [[1]]) / sum (unlist (nbs))
-            mfrac <- length (nbs [[1]]) / length (unlist (nbs))
-            if (nfrac >= 0.5 & mfrac >= 0.5) 
+            # The following condition continues the analysis only as long as the
+            # biggest contiguous partition represents the majority of all new
+            # partitions:
+            #nfrac <- sum (nbs [[maxnbs]]) / sum (unlist (nbs))
+            #mfrac <- length (nbs [[maxnbs]]) / length (unlist (nbs))
+            #if (nfrac >= 0.5 & mfrac >= 0.5) 
+            #{
+
+            # The following are all calculated from nbs, which is a list
+            # returned from get.partition.neighbours of IDs of groups which
+            # subsequently split to form two new groups. Each item of nbs
+            # contains a list of contiguous groups. The number of new groups in
+            # each contiguous component is twice the length of that list item.
+            #
+            # part.sizes is the value of N, which is the total number of groups
+            # in each new partition stage, but the actual estimate of N is based
+            # on the largest contiguous partition, stored as part.sizesC.  mvals
+            # is the number of contiguous groups within which new clusters form.
+            part.sizes <- c (part.sizes, sum (unlist (nbs$sizes)))
+            maxnbs <- which.max (sapply (nbs$sizes, sum))
+            part.sizesC <- c (part.sizesC, sum (nbs$sizes [[maxnbs]]))
+            mvals <- c (mvals, length (nbs$sizes [[maxnbs]]))
+            cat ("| ", j, "\t", nci [1], "->", nci [2], "\t|\t", 
+                 sum (nbs$sizes [[maxnbs]]), " / ", sum (unlist (nbs$sizes)), 
+                 "\t", length (nbs$sizes [[maxnbs]]), " / ", 
+                 length (unlist (nbs$sizes)), sep="")
+            if (j == 2) 
+                cat ("\t\t\t\t\t\t\t\t\t|\n")
+            else 
             {
-                part.sizes <- c (part.sizes, sum (unlist (nbs)))
-                part.sizesC <- c (part.sizesC, sum (nbs [[1]]))
-                mvals <- c (mvals, length (nbs [[1]]))
-                cat ("| ", j, "\t", nci [1], "->", nci [2], "\t|\t", sum (nbs [[1]]), 
-                     " / ", sum (unlist (nbs)), "\t", length (nbs [[1]]),
-                     " / ", length (unlist (nbs)), sep="")
-                if (j == 2) 
-                    cat ("\t\t\t\t\t\t\t\t\t|\n")
+                nm <- part.sizesC / mvals
+                # nm values for k-means are sometimes all identical, which
+                # causes the t-test to crash, as does the odd occasion when
+                # only a single value can be extracted before the fractions
+                # drop below 0.5:
+                if (sd (nm) == 0)
+                    cat ("\t", formatC (mean (nm, na.rm=TRUE), format="f", digits=2),
+                         "+/-0.00\t\t\t\t\t\t\t\t|\n", sep="")
+                    #stop ("\nERROR: Estimated values of N/M",
+                    #     " are all identical---Just run again!\n")
+                else if (length (nm) < 2)
+                    stop ("\nERROR: Insufficient values of N/M generated",
+                          "---Just run again!\n")
                 else 
                 {
-                    nm <- part.sizesC / mvals
-                    # nm values for k-means are sometimes all identical, which
-                    # causes the t-test to crash, as does the odd occasion when
-                    # only a single value can be extracted before the fractions
-                    # drop below 0.5:
-                    if (sd (nm) == 0)
-                        stop ("\nERROR: Estimated values of N/M",
-                             " are all identical---Just run again!\n")
-                    else if (length (nm) < 2)
-                        stop ("\nERROR: Insufficient values of N/M generated",
-                              "---Just run again!\n")
-                    else 
+                    tt <- t.test (nm - e1)
+                    tt2 <- t.test (nm - 2)
+                    cat ("\t", formatC (mean (nm, na.rm=TRUE), format="f", digits=2),
+                        "+/-", formatC (sd (nm, na.rm=TRUE), format="f", digits=2),
+                        "\t(", formatC (tt$statistic, format="f", digits=4),
+                        ", ", formatC (tt$p.value, format="f", digits=4),
+                        ")\t(", formatC (tt2$statistic, format="f", digits=4),
+                        ", ", formatC (tt2$p.value, format="f", digits=4),
+                        ")\t|\n", sep="")
+                    if (i == 1) 
                     {
-                        tt <- t.test (nm - e1)
-                        tt2 <- t.test (nm - 2)
-                        cat ("\t", formatC (mean (nm, na.rm=TRUE), format="f", digits=2),
-                            "+/-", formatC (sd (nm, na.rm=TRUE), format="f", digits=2),
-                            "\t(", formatC (tt$statistic, format="f", digits=4),
-                            ", ", formatC (tt$p.value, format="f", digits=4),
-                            ")\t(", formatC (tt2$statistic, format="f", digits=4),
-                            ", ", formatC (tt2$p.value, format="f", digits=4),
-                            ")\t|\n", sep="")
-                        if (i == 1) 
-                        {
-                            tstats [[1]] <- c (tstats [[1]], tt$statistic)
-                            tstats [[2]] <- c (tstats [[2]], tt2$statistic)
-                        } else if (i == 3) 
-                        {
-                            tstats [[3]] <- c (tstats [[3]], tt$statistic)
-                            tstats [[4]] <- c (tstats [[4]], tt2$statistic)
-                        }
-                    } # end else not stop
-                } # end else j > 2
-            } # end else nfrac, mfrac > 0.5
+                        tstats [[1]] <- c (tstats [[1]], tt$statistic)
+                        tstats [[2]] <- c (tstats [[2]], tt2$statistic)
+                    } else if (i == 3) 
+                    {
+                        tstats [[3]] <- c (tstats [[3]], tt$statistic)
+                        tstats [[4]] <- c (tstats [[4]], tt2$statistic)
+                    }
+                } # end else not stop
+            } # end else j > 2
+            #} # end else nfrac, mfrac > 0.5
         } # end for j
         cat (rep ("-", 105), "\n", sep="")
         # gvals then needs to be shorted to length of N & M:
@@ -338,7 +357,7 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
              sum (part.sizes), " = ", prop, "%\n\n", sep="")
 
         # The following are used for the final average summaries
-        if (meth [i] == "complete") 
+        if (meth [i] != "k-means") 
         {
             gout.hc <- c (gout.hc, gvals)
             nout.hc <- c (nout.hc, part.sizesC)
@@ -350,8 +369,8 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
             mout.km <- c (mout.km, mvals)
         }
 
-        # Values of s are now calculated from observations of Delta G; from Delta G
-        # estimated as N - M; from N; and from M.
+        # Values of s are now calculated from observations of Delta G; from
+        # Delta G estimated as N - M; from N; and from M.
         sG <- 1 / log (e1 * gvals / (e1 - 1))
         g.est <- part.sizesC - mvals
         sGC <- 1 / log (e1 * g.est / (e1 - 1))
@@ -456,8 +475,18 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     # thus be nothing to plot.
     if (max (sapply (tstats, length)) > 1)
     {
-        tstats <- lapply (tstats, function (x) abs (x))
-        ylims <- lapply (tstats, function (x) range (abs (x)))
+        tstats  <- lapply (tstats, function (x) {
+                           if (is.null (x))
+                               NULL
+                           else
+                               abs (x) 
+             })
+        ylims <- lapply (tstats, function (x) {
+                         if (is.null (x))
+                             NULL
+                         else
+                             range (abs (x))
+             })
         ylims <- range (unlist (ylims))
         xmax <- lapply (tstats, function (x) length (x))
         xlims <- c (1, max (unlist (xmax)))
@@ -475,15 +504,19 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
         {
             indx <- 2 * i - 1
             # indx is then "TO/FROM(e)", while (indx+1) is "TO/FROM(2)"
-            i0 <- max (which (tstats [[indx]] < tstats [[indx + 1]]))
-            m1 <- tstats [[indx]] [i0 + 1] - tstats [[indx]] [i0]
-            m2 <- tstats [[indx + 1]] [i0 + 1] - tstats [[indx + 1]] [i0 + 1]
-            c1 <- tstats [[indx]] [i0] - m1 * i0
-            c2 <- tstats [[indx + 1]] [i0] - m2 * i0
-            x0 <- (c2 - c1) / (m1 - m2)
-            y0 <- m1 * x0 + c1
-            points (x0, y0, pch=19, col=cols [indx])
-            lines (rep (x0, 2), c (0, y0), col=cols [indx], lty=3)
+            indx <- which (tstats [[indx]] < tstats [[indx + 1]])
+            if (length (indx) > 0)
+            {
+                i0 <- max (which (tstats [[indx]] < tstats [[indx + 1]]))
+                m1 <- tstats [[indx]] [i0 + 1] - tstats [[indx]] [i0]
+                m2 <- tstats [[indx + 1]] [i0 + 1] - tstats [[indx + 1]] [i0 + 1]
+                c1 <- tstats [[indx]] [i0] - m1 * i0
+                c2 <- tstats [[indx + 1]] [i0] - m2 * i0
+                x0 <- (c2 - c1) / (m1 - m2)
+                y0 <- m1 * x0 + c1
+                points (x0, y0, pch=19, col=cols [indx])
+                lines (rep (x0, 2), c (0, y0), col=cols [indx], lty=3)
+            }
         }
     }
 

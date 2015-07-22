@@ -1,8 +1,8 @@
 #' get.partition.neighbours
 #'
 #' Identifies the clusters in min (nc) that split to form separate clusters in
-#' max (nc). For each cluster, a list element is returned with the number of
-#' groups into which each connected group is subsequently partitioned.
+#' max (nc). For each cluster, a list element is returned identifying the groups
+#' into which each connected group is subsequently partitioned.
 #'
 #' @param city nyc, washington, chicago, boston, london (case insensitive)
 #' @param method complete, ward, or skater, to be compared to k-means
@@ -10,8 +10,8 @@
 #' clusters in nc[1] that split to form clusters in nc[2]
 #' @param dir to or from
 #' @param plot enables visual inspection of the spatial arrangements.
-#' @return list of neighbouring clusters in nc[1] that subsequently split in
-#' nc[2]
+#' @return $nbs=list of neighbouring clusters in nc[1] that are subsequently
+#' partitioned in nc[2], $sizes=corresponding sizes
 
 get.partition.neighbours <- function (city="nyc", method="complete",
                                       nc=c(11,15), dir="from", plot=FALSE)
@@ -116,8 +116,10 @@ get.partition.neighbours <- function (city="nyc", method="complete",
         }
     } # end if plot
 
-    indx.lo <- lapply (1:nlo, function (x) as.vector (which (membs.lo [,diri] == x)))
-    indx.hi <- lapply (1:nhi, function (x) as.vector (which (membs.hi [,diri] == x)))
+    indx.lo <- lapply (1:nlo, function (x) 
+                       as.vector (which (membs.lo [,diri] == x)))
+    indx.hi <- lapply (1:nhi, function (x) 
+                       as.vector (which (membs.hi [,diri] == x)))
     # Find which groups in indx.lo contain the groups in indx.hi, and add up how
     # many of the latter belong in each of the former:
     indx <- lapply (indx.hi, function (i) {
@@ -131,7 +133,7 @@ get.partition.neighbours <- function (city="nyc", method="complete",
     tindx <- as.vector (table (indx)) # has a length of nc [1]
     tindx2 <- which (tindx > 1)
     tindx <- tindx [tindx2]
-    # tindx2 now indexes ththe original nc1 clusters that subsequently became
+    # tindx2 now indexes the original nc1 clusters that subsequently became
     # divided in forming the nc [2], while tindx holds the actual numbers of
     # clusters into which these become partitioned. All that remains is to
     # discern whether these clusters from within nc [1] are neighbours.
@@ -180,8 +182,11 @@ get.partition.neighbours <- function (city="nyc", method="complete",
     # contiguous clusters within nc [1], and not the total number into which
     # that contiguous group is subsequently divided in nc [2].
     cindx <- order (nbmat.cl$csize, decreasing=TRUE)
-    results <- lapply (1:length (cindx), function (i) {
+    nbs <- lapply (1:length (cindx), function (i) {
                        membs <- which (nbmat.cl$membership == cindx [i])
                        tindx2 [membs]    })
-    return (results)
+    sizes <- lapply (1:length (cindx), function (i) {
+                       membs <- which (nbmat.cl$membership == cindx [i])
+                       tindx [membs]    })
+    return (list (nbs=nbs, sizes=sizes))
 } # end function get.partition.neighbours
