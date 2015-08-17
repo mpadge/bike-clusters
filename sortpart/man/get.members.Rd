@@ -4,7 +4,8 @@
 \alias{get.members}
 \title{get-members}
 \usage{
-get.members(city = "nyc", nc = 8, method = "ward", details = FALSE)
+get.members(city = "nyc", nc = 8, method = "complete", details = FALSE,
+  plot = FALSE)
 }
 \arguments{
 \item{city}{nyc, washington, chicago, boston, london (case insensitive)}
@@ -14,6 +15,8 @@ get.members(city = "nyc", nc = 8, method = "ward", details = FALSE)
 \item{method}{= (ward, k-means, complete)}
 
 \item{details}{prints statistics of cluster sizes}
+
+\item{plot}{enables visual inspection of results}
 }
 \value{
 a vector of 2 columns for (from, to) data, each containing cluster

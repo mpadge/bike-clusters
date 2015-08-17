@@ -10,7 +10,7 @@
 #' results).
 #' @return nothing (dumps files to dir)
 
-get.clusters <- function (city="nyc", method="ward", trial="")
+get.clusters <- function (city="nyc", method="complete", trial="")
 {
     require (spatstat) # for ppp
     require (geosphere) # for areaPolygon

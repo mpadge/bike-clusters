@@ -205,7 +205,7 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     tstats <- list (NULL, NULL, NULL, NULL)
     # tstats collects T-statistics for HC only for differences between means and
     # values of both e and 2. These are plotted in final panel.
-    for (i in 1:4) { # Over (to, from) data
+    for (i in 1:4) { 
         # Find the position of the final peak (determined by npeaks), and fit the
         # nlrq lines only to that point.
         pks <- which (diff (sign (diff (tvals [,i]))) == -2) + 1
@@ -318,7 +318,7 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
                 # drop below 0.5:
                 if (sd (nm) == 0)
                     cat ("\t", formatC (mean (nm, na.rm=TRUE), format="f", digits=2),
-                         "+/-0.00\t\t\t\t\t\t\t\t|\n", sep="")
+                         "+/-0.00\t\t\t\t\t\t\t|\n", sep="")
                     #stop ("\nERROR: Estimated values of N/M",
                     #     " are all identical---Just run again!\n")
                 else if (length (nm) < 2)

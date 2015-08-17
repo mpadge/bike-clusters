@@ -4,7 +4,7 @@
 \alias{get.clusters}
 \title{get-clusters}
 \usage{
-get.clusters(city = "nyc", method = "ward", trial = "")
+get.clusters(city = "nyc", method = "complete", trial = "")
 }
 \arguments{
 \item{city}{nyc, washington, chicago, boston, london (case insensitive)}

@@ -50,4 +50,3 @@ dvi:
 
 clean:
 	rm -f *.o *.dvi *.blg *.maf *.mtc *.mtc0 *.ps *.soc
-
