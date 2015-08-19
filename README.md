@@ -16,7 +16,8 @@ The two routines are `ClustersNeutral`, which generates neutrally expected
 values of inter- and intra-cluster distance, and `Clusters Actual`, which does
 the corresponding calculations for the observed rides.
 
-All calculations are repeated for a range of numbers of clusters (up to 100).
+All calculations are repeated for a range of numbers of clusters (up to 100,
+except skater only up to 50).
 
 ### Usage for a given city and clustering method:
 
@@ -26,6 +27,6 @@ All calculations are repeated for a range of numbers of clusters (up to 100).
 4. `>./ClustersActual city`
 5. `R> calc.pnc (city, method`
 6. `R> clust.sig (city, method)`
-7. `>/randomClusters` (requires manual entry of reference numbers)
+7. `>/randomClusters` city direction (0/1)
 
 See `aaaread-this` for further details.
