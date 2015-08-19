@@ -54,7 +54,6 @@ num.clusts <- function (city="nyc", plot=FALSE, method="complete")
     }
     setwd (wd0)
     wd <- paste (wd, "bike-clusters/results/", sep="")
-    wdk <- paste (wd, "k-means-clusters/", sep="")
 
     fname <- paste (wd, city, "-results-actual-to-", method, ".txt", sep="")
     d.to <- read.csv (fname, sep="," , header=TRUE)

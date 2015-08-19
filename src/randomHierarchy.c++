@@ -56,7 +56,7 @@ int main (int argc, char *argv [])
     bool dir_to;
     int tempi = 0, dir_to_i;
     double tempd, mn, sd, tt;
-    std::string fname, city = "nyc";
+    std::string fname, city = "nyc", method="complete";
     std::ofstream out_file;
     time_t seed;
     base_generator_type generator(42u);
@@ -77,6 +77,14 @@ int main (int argc, char *argv [])
                 city = "washingtondc";
             else
                 city = "nyc";
+        } else if (tempi < 2) {
+            method = *argv;
+            std::transform (method.begin(), method.end(), method.begin(), 
+                    ::tolower);
+            if (method.substr (0, 2) == "co")
+                method = "complete";
+            else
+                method = "k-means";
         } else {
             dir_to_i = atoi (*argv);
             if (dir_to_i == 0) 
@@ -90,7 +98,7 @@ int main (int argc, char *argv [])
     //seed = atoi (argv [3]);
     generator.seed (static_cast <unsigned int> (seed));
 
-    ClusterData clusterData (city, dir_to);
+    ClusterData clusterData (city, dir_to, method);
 
     // Allocate the random points with CGAL in square with values in +/- first
     // argument, and size passed implicitly as npts.
@@ -193,6 +201,8 @@ void ClusterData::readNumClusters ()
     assert (!in_file.fail ());
     if (!_dir_to)
         coli = 6;
+    if (_method != "complete")
+        coli += 3;
     getline (in_file, linetxt, '\n'); // header
 
     numClusts = 0;

@@ -61,7 +61,7 @@ class ClusterData
 {
     protected:
         bool _dir_to;
-        const std::string _dir = "./results/", _city;
+        const std::string _dir = "./results/", _city, _method;
         std::string _fname;
     public:
         // final values need num_repeats = 10000 
@@ -71,18 +71,22 @@ class ClusterData
         ivec clusterNumbers, numContig, numTot, cluster_ids, table;
         dmat distmat;
 
-        ClusterData (std::string str, bool dir)
-            : _city (str), _dir_to (dir)
+        ClusterData (std::string citystr, bool dir, std::string methstr)
+            : _city (citystr), _dir_to (dir), _method (methstr)
         {
+            std::cout << "Usage: ./rhier city dir=(0/1) for (from/to) method" << 
+                std::endl <<
+                "\tdefaults: nyc 1 complete" << std::endl;
             _fname = _dir + _city + "-cluster-sizes.txt";
             readNumClusters ();
             cluster_ids.resize (npts);
             std::cout << "Calculating " << num_repeats << 
                 " random clusters for " << getCity ();
             if (_dir_to)
-                std::cout << " direction = TO:" << std::endl;
+                std::cout << " direction = TO: method = ";
             else
-                std::cout << " direction = FROM:" << std::endl;
+                std::cout << " direction = FROM: method = ";
+            std::cout << _method << std::endl;
         }
         ~ClusterData ()
         {
