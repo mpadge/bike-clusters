@@ -77,6 +77,12 @@ class ClusterData
             _fname = _dir + _city + "-cluster-sizes.txt";
             readNumClusters ();
             cluster_ids.resize (npts);
+            std::cout << "Calculating " << num_repeats << 
+                " random clusters for " << getCity ();
+            if (_dir_to)
+                std::cout << " direction = TO:" << std::endl;
+            else
+                std::cout << " direction = FROM:" << std::endl;
         }
         ~ClusterData ()
         {

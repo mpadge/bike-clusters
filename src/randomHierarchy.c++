@@ -185,52 +185,56 @@ int main (int argc, char *argv [])
 
 void ClusterData::readNumClusters ()
 {
-    if (_dir_to)
+    int ipos, coli = 0; 
+    std::string linetxt;
+    std::ifstream in_file;
+
+    in_file.open (_fname.c_str(), std::ifstream::in);
+    assert (!in_file.fail ());
+    if (!_dir_to)
+        coli = 6;
+    getline (in_file, linetxt, '\n'); // header
+
+    numClusts = 0;
+    std::vector <int> clusterNumbersTemp, numContigTemp, numTotTemp;
+    while (getline (in_file, linetxt, '\n'))
     {
-        numClusts = 5;
-        clusterNumbers.resize (numClusts); 
-        numContig.resize (numClusts);
-        numTot.resize (numClusts);
-        std::cout << "Calculating " << num_repeats << 
-            " random clusters for " << getCity () << " direction = TO:" << std::endl;
-        clusterNumbers (0) = 5;
-        clusterNumbers (1) = 7;
-        clusterNumbers (2) = 9;
-        clusterNumbers (3) = 12;
-        clusterNumbers (4) = 15;
-        numContig (0) = 2;
-        numContig (1) = 2;
-        numContig (2) = 3;
-        numContig (3) = 3;
-        numContig (4) = 1;
-        numTot (0) = 2;
-        numTot (1) = 2;
-        numTot (2) = 3;
-        numTot (3) = 3;
-        numTot (4) = 2;
-    } else {
-        numClusts = 5;
-        clusterNumbers.resize (numClusts); 
-        numContig.resize (numClusts);
-        numTot.resize (numClusts);
-        std::cout << "Calculating " << num_repeats << 
-            " random clusters for " << getCity () << " direction = FROM:" << std::endl;
-        clusterNumbers (0) = 9;
-        clusterNumbers (1) = 12;
-        clusterNumbers (2) = 15;
-        clusterNumbers (3) = 17;
-        clusterNumbers (4) = 21;
-        numContig (0) = 3;
-        numContig (1) = 2;
-        numContig (2) = 1;
-        numContig (3) = 4;
-        numContig (4) = 2;
-        numTot (0) = 3;
-        numTot (1) = 3;
-        numTot (2) = 2;
-        numTot (3) = 4;
-        numTot (4) = 3;
+        for (int i=0; i<coli; i++)
+        {
+            ipos = linetxt.find (',', 0);
+            linetxt = linetxt.substr (ipos + 1, linetxt.length () - ipos - 1);
+        }
+        ipos = linetxt.find (',', 0);
+        clusterNumbersTemp.push_back (atoi (linetxt.substr (0, ipos).c_str()));
+        if (clusterNumbersTemp.back () > 0)
+            numClusts++;
+        linetxt = linetxt.substr (ipos + 1, linetxt.length () - ipos - 1);
+        ipos = linetxt.find (',', 0);
+        numContigTemp.push_back (atoi (linetxt.substr (0, ipos).c_str()));
+        linetxt = linetxt.substr (ipos + 1, linetxt.length () - ipos - 1);
+        if (_dir_to)
+        {
+            ipos = linetxt.find (',', 0);
+            numTotTemp.push_back (atoi (linetxt.substr (0, ipos).c_str()));
+        } else {
+            numTotTemp.push_back (atoi (linetxt.c_str()));
+        }
     }
+    in_file.close ();
+
+    clusterNumbers.resize (numClusts);
+    numContig.resize (numClusts);
+    numTot.resize (numClusts);
+    for (int i=0; i<numClusts; i++)
+    {
+        clusterNumbers (i) = clusterNumbersTemp [i];
+        numContig (i) = numContigTemp [i];
+        numTot (i) = numTotTemp [i];
+    }
+
+    clusterNumbersTemp.resize (0);
+    numContigTemp.resize (0);
+    numTotTemp.resize (0);
 }
 
 
