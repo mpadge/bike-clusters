@@ -51,7 +51,7 @@ get.num.clusts <- function (city="nyc", method="complete")
     nc <- dat$nc
     dat <- dat [,14:17] # The simulated probabilities
 
-    if (city == "chicago" | city == "london")
+    if (city == "chicago")
     {
         # These lines equate numbers of clusters with minimal probabilities
         # (excluding the first peak, which is sometimes the minimum).
@@ -64,7 +64,14 @@ get.num.clusts <- function (city="nyc", method="complete")
         # TODO: Check whether these are necessary with the new results!
         if (city == "nyc" | city == "boston")
             p0 <- 0.057
-        mini <- apply (dat, 2, function (x) which (x < p0))
+        else if (city == "london")
+            p0 <- 0.065
+        mini <- apply (dat, 2, function (x) {
+                       if (length (which (x < p0)) == 0)
+                           which.min (x)
+                       else
+                           which (x < p0)
+                })
         mini <- sapply (mini, max)
     }
     mini.indx <- (0:3) * dim (dat) [1] + mini

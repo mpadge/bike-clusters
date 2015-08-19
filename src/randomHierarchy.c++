@@ -39,26 +39,6 @@
  *  Compiler Options:   -std=c++11 -lCGAL -lgmp
  ***************************************************************************/
 
-/*
- * Results from 10000 repeats are:
- * -----------------------------------------------------------------------
- Calculating 10000 random clusters for direction = FROM:
- [0, nc=3]: contig = 1.9988 +/- 0.0016 / observed = 2; (N, p, p_cum) = (9988, 0.9988, 0.9988); T = -3.0017
- [1, nc=8]: contig = 2.4736 +/- 0.3077 / observed = 3; (N, p, p_cum) = (5025, 0.5025, 0.5019); T = -94.8899
- [2, nc=11]: contig = 2.8367 +/- 0.5579 / observed = 4; (N, p, p_cum) = (1947, 0.1947, 0.0977); T = -155.7457
- [3, nc=15]: contig = 3.0089 +/- 0.7558 / observed = 5; (N, p, p_cum) = (518, 0.0518, 0.0051); T = -229.0283
- [4, nc=20]: contig = 1.7268 +/- 0.4073 / observed = 3; (N, p, p_cum) = (1042, 0.1042, 0.0005); T = -199.4982
- [5, nc=24]: contig = 1.2303 +/- 0.1774 / observed = 1; (N, p, p_cum) = (10000, 1.0000, 0.0005); T = 54.6738
- 
- Calculating 10000 random clusters for direction = TO:
- [0, nc=4]: contig = 1.9469 +/- 0.0507 / observed = 2; (N, p, p_cum) = (9469, 0.9469, 0.9469); T = -23.5908
- [1, nc=8]: contig = 2.4476 +/- 0.3181 / observed = 3; (N, p, p_cum) = (4827, 0.4827, 0.4571); T = -97.9449
- [2, nc=11]: contig = 2.1843 +/- 0.3834 / observed = 2; (N, p, p_cum) = (8837, 0.8837, 0.4039); T = 29.7626
- [3, nc=15]: contig = 3.0018 +/- 0.7860 / observed = 4; (N, p, p_cum) = (2694, 0.2694, 0.1088); T = -112.5934
- [4, nc=20]: contig = 1.7296 +/- 0.4094 / observed = 2; (N, p, p_cum) = (6237, 0.6237, 0.0679); T = -42.2591
- [5, nc=23]: contig = 2.0413 +/- 0.5391 / observed = 2; (N, p, p_cum) = (7819, 0.7819, 0.0531); T = 5.6251
- *
- */
 
 #include "randomHierarchy.h"
 
@@ -70,16 +50,42 @@
  ************************************************************************
  ************************************************************************/
 
-int main (int argc, char *argv []) {
-    int tempi;
+int main (int argc, char *argv []) 
+{
+
+    bool dir_to;
+    int tempi = 0, dir_to_i;
     double tempd, mn, sd, tt;
-    std::string fname;
+    std::string fname, city = "nyc";
     std::ofstream out_file;
     time_t seed;
     base_generator_type generator(42u);
 
-    // Default direction is from, otherwise for any diri != 0, direction = to.
-    int diri = atoi (argv [2]);
+    while (*++argv != NULL)
+    {
+        if (tempi < 1)
+        {
+            city = *argv;
+            std::transform (city.begin(), city.end(), city.begin(), ::tolower);
+            if (city.substr (0, 2) == "lo")
+                city = "london";
+            else if (city.substr (0, 2) == "bo")
+                city = "boston";
+            else if (city.substr (0, 2) == "ch")
+                city = "chicago";
+            else if (city.substr (0, 2) == "wa" || city.substr (0, 2) == "dc")
+                city = "washingtondc";
+            else
+                city = "nyc";
+        } else {
+            dir_to_i = atoi (*argv);
+            if (dir_to_i == 0) 
+                dir_to = true;
+            else 
+                dir_to = false;
+        }
+        tempi++;
+    }
 
     //seed = atoi (argv [3]);
     generator.seed (static_cast <unsigned int> (seed));
@@ -103,56 +109,53 @@ int main (int argc, char *argv []) {
     ivec cluster_ids;
     cluster_ids.resize (npts);
 
-    // I've not yet figured out how to use boost::assign to fill a boost vector - it
-    // only seems to work with std::vector!
+    // I've not yet figured out how to use boost::assign to fill a boost vector
+    // - it only seems to work with std::vector!
     int numClusts;
     ivec numClusters, numContig, numTot;
-    if (diri == 0) 
+    if (dir_to)
     {
-        numClusts = 6;
-        numClusters.resize (numClusts); 
-        numContig.resize (numClusts);
-        numTot.resize (numClusts);
-        std::cout << "Calculating " << num_repeats << 
-            " random clusters for direction = FROM:" << std::endl;
-        numClusters (0) = 4;
-        numClusters (1) = 7;
-        numClusters (2) = 9;
-        numClusters (3) = 12;
-        numClusters (4) = 16;
-        numClusters (5) = 20;
-        numContig (0) = 2;
-        numContig (1) = 3;
-        numContig (2) = 2;
-        numContig (3) = 3;
-        numContig (4) = 3;
-        numContig (5) = 4;
-        numTot (0) = 2;
-        numTot (1) = 3;
-        numTot (2) = 2;
-        numTot (3) = 3;
-        numTot (4) = 4;
-        numTot (5) = 4;
-    } else {
         numClusts = 5;
         numClusters.resize (numClusts); 
         numContig.resize (numClusts);
         numTot.resize (numClusts);
         std::cout << "Calculating " << num_repeats << 
             " random clusters for direction = TO:" << std::endl;
-        numClusters (0) = 4;
-        numClusters (1) = 8;
-        numClusters (2) = 12;
-        numClusters (3) = 16;
-        numClusters (4) = 19;
+        numClusters (0) = 5;
+        numClusters (1) = 7;
+        numClusters (2) = 9;
+        numClusters (3) = 12;
+        numClusters (4) = 15;
         numContig (0) = 2;
-        numContig (1) = 3;
-        numContig (2) = 2;
-        numContig (3) = 4;
-        numContig (4) = 3;
+        numContig (1) = 2;
+        numContig (2) = 3;
+        numContig (3) = 3;
+        numContig (4) = 1;
         numTot (0) = 2;
-        numTot (1) = 3;
+        numTot (1) = 2;
         numTot (2) = 3;
+        numTot (3) = 3;
+        numTot (4) = 2;
+    } else {
+        numClusts = 5;
+        numClusters.resize (numClusts); 
+        numContig.resize (numClusts);
+        numTot.resize (numClusts);
+        std::cout << "Calculating " << num_repeats << 
+            " random clusters for direction = FROM:" << std::endl;
+        numClusters (0) = 9;
+        numClusters (1) = 12;
+        numClusters (2) = 15;
+        numClusters (3) = 17;
+        numClusters (4) = 21;
+        numContig (0) = 3;
+        numContig (1) = 2;
+        numContig (2) = 1;
+        numContig (3) = 4;
+        numContig (4) = 2;
+        numTot (0) = 3;
+        numTot (1) = 3;
+        numTot (2) = 2;
         numTot (3) = 4;
         numTot (4) = 3;
     }

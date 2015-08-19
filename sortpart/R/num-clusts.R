@@ -76,17 +76,20 @@ num.clusts <- function (city="nyc", plot=FALSE, method="complete")
     
     ttxt <- c (" to (hc) ", "to (km)", "from (hc)", "from (km)")
     tvals <- cbind (t0 [,1], tk [,1], t0 [,2], tk [,2])
+
+    # ****** Maximum Number of Peaks is set here to 15 *****
     np.lim <- (2:15)
+
     gvals <- hvals <- nmax <- array (NA, dim=c(length (np.lim), 4))
     rescale <- 2 # If 3, then O(3) bounds are calculated
     ybounds <- c (0.99, 0.01) # Upper and lower bounds for nlqr regressions
     
-    for (i in 1:4) { # Over (to, from) data
+    for (i in 1:4) { # to-hc, to-km, from-hc, from-km
         pks <- which (diff (sign (diff (tvals [,i]))) == -2) + 1
 
-        # The following could be done as lapply, but time is not as issue, and the
-        # function would end up very complex and hard to read.
-        for (j in 1:length (np.lim)) { # loop over number of peaks
+        # The following is quick, so is done as a loop over number of peaks,
+        # rather than lapply
+        for (j in 1:length (np.lim)) { 
             pks.j <- pks [1:min (np.lim [j], length (pks))] 
             # pks.j are then the positions of the first np.lim[j] pks, with the
             # following line making a continuous indx.

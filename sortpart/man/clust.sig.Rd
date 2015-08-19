@@ -4,14 +4,14 @@
 \alias{clust.sig}
 \title{clust.sig}
 \usage{
-clust.sig(city = "nyc", method = "complete", xmax = 36)
+clust.sig(city = "nyc", method = "complete", rescale = 2)
 }
 \arguments{
 \item{city}{nyc, washington, chicago, boston, london (case insensitive)}
 
 \item{method}{= (ward, k-means, complete)}
 
-\item{xmax}{maximum number of clusters to be analysed and plotted}
+\item{rescale}{= order of polynomial re-scaling of T-values (2 or 3)}
 }
 \value{
 statistical summary as screen dump

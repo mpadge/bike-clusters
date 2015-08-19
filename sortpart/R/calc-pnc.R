@@ -1,9 +1,9 @@
 #' calc.pnc
 #'
 #' Calculates probabilities of peak heights as returned from the num.clusts ()
-#' function.  If is.na (dat), then the table is called internally. To generate
-#' useful statistics, this function should be run with a VERY large number of
-#' repeats (for example, 100,000), which will take a LONG time!
+#' function.  To generate useful statistics, this function should be run with a 
+#' VERY large number of repeats (for example, 100,000), which will take a 
+#' LONG time!
 #'
 #' @param city nyc, washington, chicago, boston, london (case insensitive)
 #' @param method complete, ward, or skater, to be compared to k-means
@@ -143,4 +143,3 @@ calc.pnc <- function (city = "nyc", method="complete", nrpts=100, rescale=2)
     write.table (dat, file=fname, row.names=FALSE, sep=",")
     return (dat)
 } # end function calc.pnc
-

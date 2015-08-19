@@ -78,20 +78,14 @@ get.skater.groups <- function (city="nyc", dirf="from", max.groups=50)
     # Construct a neighbour list to spatially constrain clusters, as defined by
     # Delaunay triangulations
     xy <- data.frame (cbind (dat [lls [1]], dat [lls [2]]))
-    # London has a duplicate xy for some reason
-    nn <- as.numeric (row.names (unique (xy)))
-    ni <- which ((1:length (nn) - nn) != 0)[1] # index of duplicates
     names (xy) <- c ("x", "y")
 
-    # r2 matrices sometimes have entire missing columns, which are ultimately
-    # returned with NA cluster memberships. These missing columns also have to
-    # be removed from nbs. Also, the duplicate xy for London has to be removed
-    # from the indx
+    # Missing data for particular stations produce NAs in R2 matrices, so an
+    # index of non-missing stations is made
     indx <- which (rowSums (dfull, na.rm=TRUE) > 0)
-    indx <- indx [which (!indx %in% ni)]
+    xy <- xy [indx,]
     d <- dfull [indx, indx]
     npts <- length (indx)
-    xy <- xy [indx,]
     
     tm <- tri.mesh (xy)
     nbs <- neighbours (tm)
@@ -99,7 +93,7 @@ get.skater.groups <- function (city="nyc", dirf="from", max.groups=50)
     nbs.max <- max (nbs.max) # = 10
 
     # The "mstree" function in spdep requires a neighbour object of class "nb".
-    # This can be make by calculating k-nearest neighbours, and then converting
+    # This can be made by calculating k-nearest neighbours, and then converting
     # with the knn2nb.  In this case, however, rather than having k-nearest
     # neighbours, the neighbours must be defined by the triangular mesh. The
     # next lines thus replace the matrix of k-nearest neighbours in knn$nn with

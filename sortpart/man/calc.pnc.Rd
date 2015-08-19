@@ -20,8 +20,8 @@ data.frame and also dumps results to text file
 }
 \description{
 Calculates probabilities of peak heights as returned from the num.clusts ()
-function.  If is.na (dat), then the table is called internally. To generate
-useful statistics, this function should be run with a VERY large number of
-repeats (for example, 100,000), which will take a LONG time!
+function.  To generate useful statistics, this function should be run with a
+VERY large number of repeats (for example, 100,000), which will take a
+LONG time!
 }
 

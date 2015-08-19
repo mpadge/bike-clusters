@@ -57,7 +57,8 @@ typedef CGAL::Delaunay_triangulation_2<Kernel, Tds>                    Delaunay;
 typedef Kernel::Point_2                                                Point;
 typedef std::vector< std::pair <Point, unsigned> > Points_with_id;
 
-const int npts = 100, num_repeats = 1000;
+// final values need num_repeats = 10000 
+const int npts = 100, num_repeats = 10000; 
 
 dmat allocatePoints (base_generator_type * generator);
 ivec allocateClusters (int num_clusters, dmat *distmat, 

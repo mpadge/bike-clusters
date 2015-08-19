@@ -6,12 +6,13 @@
 #'
 #' @param city nyc, washington, chicago, boston, london (case insensitive)
 #' @param method = (ward, k-means, complete)
-#' @param xmax maximum number of clusters to be analysed and plotted
+#' @param rescale = order of polynomial re-scaling of T-values (2 or 3)
 #' @return statistical summary as screen dump
 
-clust.sig <- function (city="nyc", method="complete", xmax=36)
+clust.sig <- function (city="nyc", method="complete", rescale=2)
 {
     require (quantreg) 
+    ybounds <- c (0.99, 0.01) # Upper and lower bounds for nlqr regressions
     
     if (tolower (substring (city, 1, 1)) == "n")
         city <- "nyc"
@@ -67,10 +68,6 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     else
         d.neutral <- read.csv (fname, header=TRUE)
 
-    # The neutral files just contain $(nsd,dmn,dsd), where the distances are
-    # total intra-cluster distances which can be converted to proportions
-    # through dividing by the total overall distances of:
-    total.dist <- get.total.dist (city=city)
     nc <- d.neutral$nc
 
     # First plot is ratio of observed to expected distance ridden within clusters
@@ -84,9 +81,15 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     t0 <- (d0 - d.neutral$dmn) / (d.neutral$dsd / sqrt (nc))
     d0 <- cbind (d.to.kmeans$d.in, d.from.kmeans$d.in)
     tk <- (d0 - d.neutral$dmn) / (d.neutral$dsd / sqrt (nc))
-    t05 <- -qt (0.05, nc)
-    t01 <- -qt (0.01, nc)
+    #t05 <- -qt (0.05, nc)
+    #t01 <- -qt (0.01, nc)
 
+
+    # *************************************************************************
+    # *************************   PLOTTING ROUTINES  **************************
+    # *************************************************************************
+
+    xmax <- 36 # maximum number of clusters to be plotted
     xdat <- nc
     ydat1 <- ydat2 <- list ()
     ydat1 [[1]] <- d.in
@@ -111,7 +114,6 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     xlims [2] <- xmax
     indx <- which (xdat <= xmax)
 
-    ybounds <- c (0.99, 0.01) # Upper and lower bounds for nlqr regressions
     for (i in 1:2) {
         ylims <- range (c (ydat1 [[i]] [indx, ], ydat2 [[i]] [indx, ]))
         plot (xdat, ydat1 [[i]] [,1], "l", col=cols [1], lwd=1, 
@@ -132,6 +134,7 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
                 legend=c("to (h-clust)", "from (h-clust)"))
             legend (legxpos [2], ypos, lwd=1, col=cols, bty="n", lty=2,
                 legend=c("to (k-means)", "from (k-means)"))
+            title (main=city)
         }
         plotbounds <- FALSE; if (plotbounds) {
             # Then plot upper and lower bounds of h-clust T-statistics
@@ -153,7 +156,7 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
         } # end if plotbounds
     } # end for i over the 2 plots
 
-    # Then plot re-scaled versions of hclust results
+    # Then plot re-scaled versions of hclust results (with O(2) polynomial)
     indx <- which (xdat <= xmax)
     ulbounds <- array (NA, dim=c(length (indx), 2))
     y.resc <- array (NA, dim=c(length (indx), 4))
@@ -179,21 +182,23 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     # *************************************************************************
     # ************************   STATISTICAL ANALYSES  ************************    
     # *************************************************************************
-    ttxt <- c (" to (hc) ", "to (km)", "from (hc)", "from (km)")
+
+    ttxt <- c ("to (hc) ", "to (km)", "from (hc)", "from (km)")
     tvals <- cbind (t0 [,1], tk [,1], t0 [,2], tk [,2])
     gvals <- dvals <- rep (NA, 4)
-    rescale <- 2 # If 3, then O(3) bounds are calculated
-    npeaks <- get.num.clusts () # returns $num.clusts and $pmin (each of len=4)
+    npeaks <- get.num.clusts (city=city, method=method) 
+    # returns $num.clusts and $pmin (each of len=4)
+
     # The following are for subsequent analyses of mean values
     gout.hc <- gout.km <- nout.hc <- nout.km <- mout.hc <- mout.km <- NULL 
-    meth <- rep (c (method, "k-means"), 2) # for get.partition.neighbours
-    dirs <- c (rep ("to", 2), rep ("from", 2)) # ditto
+    # And the following two lines are for get.partition.neighbours
+    meth <- rep (c (method, "k-means"), 2) 
+    dirs <- c (rep ("to", 2), rep ("from", 2)) 
 
     # Calculate how distinct the peaks are. This is done by first rescaling the
     # T-statistics according to non-linear regressions of lower and upper
     # bounds, so that they lie between -1 and 1. Peak distinction is then
-    # measured as the average difference to the 2 adjacent points. This measure
-    # thus has a theoretical maximum of 2, and a minimum of 0.
+    # measured as the average difference to the 2 adjacent points, \in [0,2]. 
     #
     # Values for s(M=1) in the loop that follows need adjusting, because the
     # calculated value is 1, yet any real value of M<1.5 will still round to 1
@@ -202,10 +207,7 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     s1 <- 1 / (1 + log (1.5))
     e1 <- exp (1)
 
-    tstats <- list (NULL, NULL, NULL, NULL)
-    # tstats collects T-statistics for HC only for differences between means and
-    # values of both e and 2. These are plotted in final panel.
-    for (i in 1:4) { 
+    for (i in 1:4) { # to-hc, to-km, from-hc, from-km
         # Find the position of the final peak (determined by npeaks), and fit the
         # nlrq lines only to that point.
         pks <- which (diff (sign (diff (tvals [,i]))) == -2) + 1
@@ -230,7 +232,10 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
         } # end for j
         dfr$y <- 2 * (dfr$y - ulbounds [,2]) / (ulbounds [,1] - ulbounds [,2]) - 1
 
-        # See calc.pm for explanation and interpretation of the following lines:
+        # Then the actual calculations using the nlrq-rescaled T-values stored
+        # as dfr. First join two columns of adjacent peaks, along with the
+        # positions of intervening minima (as mins). This enables evaluation of
+        # the depths of minima (pk.depth).
         np <- length (pks)
         pks2 <- cbind (pks [1:(np - 1)], pks [2:np])
         mins <- apply (pks2, 1, function (z) {
@@ -244,8 +249,8 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
         s <- mean (svals)
         nstars <- length (pks) * 3 + 46
         cat (rep ("*", nstars), "\n", sep="")
-        cat ("********** T-VALUE PEAKS", ttxt [i], "= ", 
-             xdat [pks], "**********\n", sep="")
+        cat ("********** T-VALUE PEAKS", ttxt [i], "=", 
+             xdat [pks], " **********\n")
         cat (rep ("*", nstars), "\n", sep="")
         cat ("\tG = ", formatC (g, format="f", digits=3), " +/- ",
              formatC (sd (gvals), format="f", digits=3), "; s = ",
@@ -307,7 +312,9 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
                  sum (nbs$sizes [[maxnbs]]), " / ", sum (unlist (nbs$sizes)), 
                  "\t", length (nbs$sizes [[maxnbs]]), " / ", 
                  length (unlist (nbs$sizes)), sep="")
-            if (j == 2) 
+            # The following index analyses N/M ratios only for M>4
+            i5 <- which (part.sizesC > 4)
+            if (j == 2 | length (i5) < 2) 
                 cat ("\t\t\t\t\t\t\t\t\t|\n")
             else 
             {
@@ -316,18 +323,15 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
                 # causes the t-test to crash, as does the odd occasion when
                 # only a single value can be extracted before the fractions
                 # drop below 0.5:
-                if (sd (nm) == 0)
+                if (sd (nm [i5]) == 0)
                     cat ("\t", formatC (mean (nm, na.rm=TRUE), format="f", digits=2),
                          "+/-0.00\t\t\t\t\t\t\t|\n", sep="")
                     #stop ("\nERROR: Estimated values of N/M",
                     #     " are all identical---Just run again!\n")
-                else if (length (nm) < 2)
-                    stop ("\nERROR: Insufficient values of N/M generated",
-                          "---Just run again!\n")
                 else 
                 {
-                    tt <- t.test (nm - e1)
-                    tt2 <- t.test (nm - 2)
+                    tt <- t.test (nm [i5] - e1)
+                    tt2 <- t.test (nm [i5] - 2)
                     cat ("\t", formatC (mean (nm, na.rm=TRUE), format="f", digits=2),
                         "+/-", formatC (sd (nm, na.rm=TRUE), format="f", digits=2),
                         "\t(", formatC (tt$statistic, format="f", digits=4),
@@ -335,16 +339,7 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
                         ")\t(", formatC (tt2$statistic, format="f", digits=4),
                         ", ", formatC (tt2$p.value, format="f", digits=4),
                         ")\t|\n", sep="")
-                    if (i == 1) 
-                    {
-                        tstats [[1]] <- c (tstats [[1]], tt$statistic)
-                        tstats [[2]] <- c (tstats [[2]], tt2$statistic)
-                    } else if (i == 3) 
-                    {
-                        tstats [[3]] <- c (tstats [[3]], tt$statistic)
-                        tstats [[4]] <- c (tstats [[4]], tt2$statistic)
-                    }
-                } # end else not stop
+                } 
             } # end else j > 2
             #} # end else nfrac, mfrac > 0.5
         } # end for j
@@ -408,53 +403,65 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
             formatC (sM.mean, format="f", digits=3), "\t|\n", sep="")
         cat (rep ("-", 81), "\n", sep="")
 
-        # Then calculate T-tests between the four series of s-values
-        cat ("T-statistics for differences in s-values (Gc = N - M):\n")
-        cat ("|\t\t|\tStatistic\t\t|\tp-value\t\t\t|\n")
-        cat ("|\t\t|\tGc\tN\tM\t|\tGc\tN\tM\t|\n")
-        cat (rep ("-", 81), "\n", sep="")
-        vlist <- c ("G", "Gc", "N")
-        sarr <- cbind (sG, sGC, sN, sM)
-        for (j in 1:3) 
-        {
-            cat ("|\t", vlist [j], "\t|\t")
-            if (j > 1) 
-                for (k in 1:(j-1)) 
-                    cat ("\t")
+        # Then calculate T-tests between the four series of s-values. These are
+        # sometimes identical when np is low, so check that first, otherwise
+        # analyse only if there are more than 2 peaks.
+        if (np < 3)
+            cat ("Only", np, 
+                 "peaks, so no further statistics can be calculated\n")
+        else {
+            sarr <- cbind (sG, sGC, sN, sM)
+            if (sum (apply (sarr, 2, sd)) == 0)
+                cat ("All", dim (sarr) [1], "s-values are identical,",
+                     "so no T-statistics can be calculated\n")
+            else {
+                cat ("T-statistics for differences in s-values (Gc = N - M):\n")
+                cat ("|\t\t|\tStatistic\t\t|\tp-value\t\t\t|\n")
+                cat ("|\t\t|\tGc\tN\tM\t|\tGc\tN\tM\t|\n")
+                cat (rep ("-", 81), "\n", sep="")
+                vlist <- c ("G", "Gc", "N")
+                for (j in 1:3) 
+                {
+                    cat ("|\t", vlist [j], "\t|\t")
+                    if (j > 1) 
+                        for (k in 1:(j-1)) 
+                            cat ("\t")
 
-            dj <- mean (diff (sarr [,j]))
-            for (k in (j+1):4) 
-            {
-                dk <- mean (diff (sarr [,k]))
-                if (dj == 0 & dk == 0)
-                    cat ("NA\t")
-                else
-                {
-                    tt <- t.test (sarr [,j], sarr [,k], var.equal=TRUE)
-                    cat (formatC (tt$statistic, format="f", digits=3), "\t")
-                }
+                    dj <- mean (diff (sarr [,j]))
+                    for (k in (j+1):4) 
+                    {
+                        dk <- mean (diff (sarr [,k]))
+                        if (dj == 0 & dk == 0)
+                            cat ("NA\t")
+                        else
+                        {
+                            tt <- t.test (sarr [,j], sarr [,k], var.equal=TRUE)
+                            cat (formatC (tt$statistic, format="f", digits=3), "\t")
+                        }
+                    }
+                    # Then p-values
+                    cat ("|")
+                    for (k in 1:j) 
+                        cat ("\t")
+                    for (k in (j+1):4) 
+                    {
+                        dk <- mean (diff (sarr [,k]))
+                        if (dj == 0 & dk == 0)
+                            cat ("NA")
+                        else
+                        {
+                            tt <- t.test (sarr [,j], sarr [,k], var.equal=TRUE)
+                            cat (formatC (tt$p.value, format="f", digits=3))
+                        }
+                        if (k < 4) 
+                            cat ("\t")
+                        else 
+                            cat ("\t|\n")
+                    }
+                } # end for j
+                cat (rep ("-", 81), "\n", sep="")
             }
-            # Then p-values
-            cat ("|")
-            for (k in 1:j) 
-                cat ("\t")
-            for (k in (j+1):4) 
-            {
-                dk <- mean (diff (sarr [,k]))
-                if (dj == 0 & dk == 0)
-                    cat ("NA")
-                else
-                {
-                    tt <- t.test (sarr [,j], sarr [,k], var.equal=TRUE)
-                    cat (formatC (tt$p.value, format="f", digits=3))
-                }
-                if (k < 4) 
-                    cat ("\t")
-                else 
-                    cat ("\t|\n")
-            }
-        } # end for j
-        cat (rep ("-", 81), "\n", sep="")
+        }
 
         # pk.depths are calculated w.r.t. background up to last peak
         dfr <- dfr [1:max (pks), ]
@@ -465,60 +472,6 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
         #if (i == 2)  cat (rep ("-", 80), "\n\n", sep="")
         cat (rep ("=", 81), "\n\n", sep="")
     } # end for i
-
-    # ********************* PLOT T-STATISTICS ***********************
-    #
-    # These are T-statistics for respective distances to e and 2. Statistics are
-    # only generated as along as the largest contiguous component represents the
-    # majority of all new clusters. If this condition fails by the second peak,
-    # then only one T-value will be generated for that series and there will
-    # thus be nothing to plot.
-    if (max (sapply (tstats, length)) > 1)
-    {
-        tstats  <- lapply (tstats, function (x) {
-                           if (is.null (x))
-                               NULL
-                           else
-                               abs (x) 
-             })
-        ylims <- lapply (tstats, function (x) {
-                         if (is.null (x))
-                             NULL
-                         else
-                             range (abs (x))
-             })
-        ylims <- range (unlist (ylims))
-        xmax <- lapply (tstats, function (x) length (x))
-        xlims <- c (1, max (unlist (xmax)))
-        cols <- c ("red", "red", "blue", "blue")
-        ltys <- c (1, 2, 1, 2)
-        plot (1:length (tstats [[1]]), tstats [[1]], "l", col=cols [1], lty=ltys [1],
-              xlim=xlims, ylim=ylims, xlab="Number of peaks", ylab="T(M)")
-        for (i in 1:4)
-            lines (1:length (tstats [[i]]), tstats [[i]],
-                   col=cols [i], lty=ltys [i], lwd=2)
-        legend (xlims [1], ylims [2], lwd=2, col=cols, lty=ltys, bty="n",
-                legend=c("TO(e)", "TO(2)", "FROM(e)", "FROM(2)"))
-
-        for (i in 1:2) 
-        {
-            indx <- 2 * i - 1
-            # indx is then "TO/FROM(e)", while (indx+1) is "TO/FROM(2)"
-            indx <- which (tstats [[indx]] < tstats [[indx + 1]])
-            if (length (indx) > 0)
-            {
-                i0 <- max (which (tstats [[indx]] < tstats [[indx + 1]]))
-                m1 <- tstats [[indx]] [i0 + 1] - tstats [[indx]] [i0]
-                m2 <- tstats [[indx + 1]] [i0 + 1] - tstats [[indx + 1]] [i0 + 1]
-                c1 <- tstats [[indx]] [i0] - m1 * i0
-                c2 <- tstats [[indx + 1]] [i0] - m2 * i0
-                x0 <- (c2 - c1) / (m1 - m2)
-                y0 <- m1 * x0 + c1
-                points (x0, y0, pch=19, col=cols [indx])
-                lines (rep (x0, 2), c (0, y0), col=cols [indx], lty=3)
-            }
-        }
-    }
 
     # ********************** SUMMARIES OF ALL FOUR ANALYSES ********************
     cat (rep ("*", 50), "\n", sep="")
@@ -534,14 +487,19 @@ clust.sig <- function (city="nyc", method="complete", xmax=36)
     for (i in 1:2) 
     {
         nm <- nout [[i]] / mout [[i]]
-        tt <- t.test (nm - e1)
-        tt2 <- t.test (nm - 2)
         cat ("*** ", txts [i], " Average N / M = ", 
              formatC (mean (nm, na.rm=TRUE), format="f", digits=2),
-             " +/- ", formatC (sd (nm, na.rm=TRUE), format="f", digits=2),
-             ": p (N/M=e) = ", formatC (tt$p.value, format="f", digits=4),
-             ", p (N/M=2) = ", formatC (tt2$p.value, format="f", digits=4),
-             "\n", sep="")
+             " +/- ", formatC (sd (nm, na.rm=TRUE), format="f", digits=2))
+        if (sd (nm) == 0)
+            cat ("\n")
+        else
+        {
+            tt <- t.test (nm - e1)
+            tt2 <- t.test (nm - 2)
+            cat (": p (N/M=e) = ", formatC (tt$p.value, format="f", digits=4),
+                 ", p (N/M=2) = ", formatC (tt2$p.value, format="f", digits=4),
+                 "\n", sep="")
+        }
 
         sg <- 1 / log (e1 * gout [[i]]/ (e1 - 1))
         sn <- 1 / log (nout [[i]])
