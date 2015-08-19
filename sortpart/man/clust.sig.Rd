@@ -17,8 +17,11 @@ clust.sig(city = "nyc", method = "complete", rescale = 2)
 statistical summary as screen dump
 }
 \description{
-Uses the output of calc.pnc, which calculates the probability of observing a
-given peak height for a given number of clusters. This routine in turn uses
-the output of num.clusts.
+Statistically summarises clusters as screen dump, and also dumps brief text
+files to be used in the C++ random hierarchies routine. These just contain
+the positions of local peaks (in terms of numbers of clusters), and numbers
+of contiguous and non-contiguous groups in which new partitions are formed at
+each stage.  Uses the output of calc.pnc, which calculates the probability of
+observing a given peak height for a given number of clusters.
 }
 

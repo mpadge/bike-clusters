@@ -90,24 +90,24 @@ int main (int argc, char *argv [])
     //seed = atoi (argv [3]);
     generator.seed (static_cast <unsigned int> (seed));
 
-    // Allocate the random points with CGAL:
-    const int numPoints = npts;
-    // Random_points in square makes square with values in +/- first argument, and
-    // size passed implicitly as numPoints.
+    ClusterData clusterData (city, dir_to);
+
+    // Allocate the random points with CGAL in square with values in +/- first
+    // argument, and size passed implicitly as npts.
     CGAL::Random_points_in_square_2<Point> g(1.0); // random points generator
     Points_with_id points;
     Delaunay tr;
-    for (int i=0; i<numPoints; i++) 
+    for (int i=0; i<clusterData.npts; i++) 
     {
         points.push_back (std::make_pair (*g, i));
         g++;
     }
     // points can then be accessed by .first, which has [0:1] for (x,y), and
     // .second, which is the ID number
-    bmat nbs = getNeighbours (&points);
-    dmat distmat = getdists (&points);
+    bmat nbs = clusterData.getNeighbours (&points);
+    dmat distmat = clusterData.getdists (&points);
     ivec cluster_ids;
-    cluster_ids.resize (npts);
+    cluster_ids.resize (clusterData.npts);
 
     // I've not yet figured out how to use boost::assign to fill a boost vector
     // - it only seems to work with std::vector!
@@ -119,7 +119,7 @@ int main (int argc, char *argv [])
         numClusters.resize (numClusts); 
         numContig.resize (numClusts);
         numTot.resize (numClusts);
-        std::cout << "Calculating " << num_repeats << 
+        std::cout << "Calculating " << clusterData.num_repeats << 
             " random clusters for direction = TO:" << std::endl;
         numClusters (0) = 5;
         numClusters (1) = 7;
@@ -141,7 +141,7 @@ int main (int argc, char *argv [])
         numClusters.resize (numClusts); 
         numContig.resize (numClusts);
         numTot.resize (numClusts);
-        std::cout << "Calculating " << num_repeats << 
+        std::cout << "Calculating " << clusterData.num_repeats << 
             " random clusters for direction = FROM:" << std::endl;
         numClusters (0) = 9;
         numClusters (1) = 12;
@@ -165,40 +165,43 @@ int main (int argc, char *argv [])
     {
         mn = sd = 0.0;
         counts (i) = 0;
-        for (int j=0; j<num_repeats; j++) 
+        for (int j=0; j<clusterData.num_repeats; j++) 
         {
             int mincount = 0;
             while (mincount < 5) 
             {
-                cluster_ids = allocateClusters (numClusters [i], &distmat, &generator);
-                ivec counts = table (&cluster_ids);
+                cluster_ids = clusterData.allocateClusters (numClusters [i], 
+                        &distmat, &generator);
+                clusterData.getTable (&cluster_ids);
                 mincount = 0;
-                for (int k=0; k<counts.size (); k++) 
-                    if (counts (k) > mincount) mincount = counts (k);
+                for (int k=0; k<clusterData.table.size (); k++) 
+                    if (clusterData.table (k) > mincount) 
+                        mincount = clusterData.table (k);
             } // end while mincout < 5
 
-            tempi = getContiguousClusters (&cluster_ids, &points, &nbs, 
-                    numClusters (i), numTot (i), &generator);
+            tempi = clusterData.getContiguousClusters (&cluster_ids, &points, 
+                    &nbs, numClusters (i), numTot (i), &generator);
             mn += (double) tempi;
             sd += (double) tempi * (double) tempi;
 
             if (tempi >= numContig (i)) 
                 counts (i)++;
         } // end for j
-        mn = mn / (double) num_repeats;
-        sd = sd / ((double) num_repeats - 1.0) - mn * mn;
-        tt = (mn - (double) numContig (i)) * sqrt ((double) num_repeats) / sqrt (sd);
+        mn = mn / (double) clusterData.num_repeats;
+        sd = sd / ((double) clusterData.num_repeats - 1.0) - mn * mn;
+        tt = (mn - (double) numContig (i)) * 
+            sqrt ((double) clusterData.num_repeats) / sqrt (sd);
 
         // Calculate cumulative probability:
         tempd = 1.0;
         for (int j=0; j<=i; j++)
-            tempd = tempd * (double) counts (j) / (double) num_repeats;
+            tempd = tempd * (double) counts (j) / (double) clusterData.num_repeats;
 
         std::cout << "[" << i << ", nc=" << numClusters (i) << "]: contig = " <<
             mn << " +/- " << sd << " / observed = " << numContig (i) << 
             "; (N, p, p_cum) = (" << counts (i) << ", " <<
-            (double) counts (i) / (double) num_repeats << ", " << tempd << 
-            "); T = " << tt << std::endl;
+            (double) counts (i) / (double) clusterData.num_repeats << ", " << 
+            tempd << "); T = " << tt << std::endl;
     } // end for i
 
     /* 
@@ -226,36 +229,17 @@ int main (int argc, char *argv [])
  ************************************************************************/
 
 
-
 /************************************************************************
  ************************************************************************
  **                                                                    **
- **                        ALLOCATEPOINTS                              **
+ **                       READNUMCLUSTERS                              **
  **                                                                    **
  ************************************************************************
  ************************************************************************/
 
-
-dmat allocatePoints (base_generator_type * generator)
+void ClusterData::readNumClusters ()
 {
-    double tempd;
-    dmat xy (npts, 2);
-
-    boost::uniform_real <> uni_dist (0, 1);
-    boost::variate_generator <base_generator_type&,
-        boost::uniform_real <> > runif ((*generator), uni_dist);
-    // Burn generator in
-    for (int i=0; i<20; i++) 
-        tempd = runif ();
-
-    for (int i=0; i<npts; i++) 
-    {
-        xy (i, 0) = runif ();
-        xy (i, 1) = runif ();
-    } // end for i
-
-    return xy;
-} // end function allocatePoints
+}
 
 
 /************************************************************************
@@ -266,7 +250,7 @@ dmat allocatePoints (base_generator_type * generator)
  ************************************************************************
  ************************************************************************/
 
-ivec allocateClusters (int num_clusters, dmat *distmat, 
+ivec ClusterData::allocateClusters (int num_clusters, dmat *distmat, 
         base_generator_type * generator)
 {
     /*
@@ -424,7 +408,7 @@ ivec allocateClusters (int num_clusters, dmat *distmat,
  ************************************************************************
  ************************************************************************/
 
-bmat getNeighbours (Points_with_id *points)
+bmat ClusterData::getNeighbours (Points_with_id *points)
 {
     int tempi, tempj;
 
@@ -464,7 +448,7 @@ bmat getNeighbours (Points_with_id *points)
  ************************************************************************
  ************************************************************************/
 
-int getContiguousClusters (ivec *clIds, Points_with_id *pts, bmat *nbs, 
+int ClusterData::getContiguousClusters (ivec *clIds, Points_with_id *pts, bmat *nbs, 
         int nclusters, int nnew, base_generator_type *generator)
 {
     int tempi, maxClusterSize = 0, clustSize;
@@ -521,23 +505,20 @@ int getContiguousClusters (ivec *clIds, Points_with_id *pts, bmat *nbs,
  ************************************************************************
  ************************************************************************/
 
-ivec table (ivec *cluster_ids)
+void ClusterData::getTable (ivec *cluster_ids)
 {
     int maxc = 0;
-    ivec counts;
 
     for (int i=0; i<npts; i++)
         if ((*cluster_ids) (i) > maxc)
             maxc = (*cluster_ids) (i);
 
-    counts.resize (maxc + 1);
+    table.resize (maxc + 1);
     for (int i=0; i<maxc; i++) 
-        counts (i) = 0;
+        table (i) = 0;
 
     for (int i=0; i<npts; i++)
-        counts ((*cluster_ids) (i))++;
-
-    return counts;
+        table ((*cluster_ids) (i))++;
 }; // end function table
 
 
@@ -549,7 +530,7 @@ ivec table (ivec *cluster_ids)
  ************************************************************************
  ************************************************************************/
 
-dmat getdists (Points_with_id *pts)
+dmat ClusterData::getdists (Points_with_id *pts)
 {
     double x [2], y [2];
     dmat distmat (npts, npts);

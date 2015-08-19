@@ -1,8 +1,11 @@
 #' clust.sig
 #'
-#' Uses the output of calc.pnc, which calculates the probability of observing a
-#' given peak height for a given number of clusters. This routine in turn uses
-#' the output of num.clusts. 
+#' Statistically summarises clusters as screen dump, and also dumps brief text
+#' files to be used in the C++ random hierarchies routine. These just contain
+#' the positions of local peaks (in terms of numbers of clusters), and numbers
+#' of contiguous and non-contiguous groups in which new partitions are formed at
+#' each stage.  Uses the output of calc.pnc, which calculates the probability of
+#' observing a given peak height for a given number of clusters. 
 #'
 #' @param city nyc, washington, chicago, boston, london (case insensitive)
 #' @param method = (ward, k-means, complete)
@@ -207,6 +210,8 @@ clust.sig <- function (city="nyc", method="complete", rescale=2)
     s1 <- 1 / (1 + log (1.5))
     e1 <- exp (1)
 
+    nmvals <- list ()
+
     for (i in 1:4) { # to-hc, to-km, from-hc, from-km
         # Find the position of the final peak (determined by npeaks), and fit the
         # nlrq lines only to that point.
@@ -262,7 +267,7 @@ clust.sig <- function (city="nyc", method="complete", rescale=2)
         # only for contiguous partitions; mvals are largest sums of part.sizesC.
         # Note that partition size and merge calculations exclude the initial
         # partition from 1 to xdat [pks] [1].
-        part.sizesC <- part.sizes <- mvals <- NULL
+        part.sizesC <- part.sizes <- mvals <- mvals.all <- NULL
         cat ("Sizes of new partitions formed from",
              "contiguous (c) and all (a) neighbours:\n")
         cat (" npks\tstage\t|\tN(c/a)\tM(c/a)\tN / M",
@@ -308,10 +313,12 @@ clust.sig <- function (city="nyc", method="complete", rescale=2)
             maxnbs <- which.max (sapply (nbs$sizes, sum))
             part.sizesC <- c (part.sizesC, sum (nbs$sizes [[maxnbs]]))
             mvals <- c (mvals, length (nbs$sizes [[maxnbs]]))
+            mvals.all <- c (mvals.all, length (unlist (nbs$sizes)))
             cat ("| ", j, "\t", nci [1], "->", nci [2], "\t|\t", 
                  sum (nbs$sizes [[maxnbs]]), " / ", sum (unlist (nbs$sizes)), 
                  "\t", length (nbs$sizes [[maxnbs]]), " / ", 
                  length (unlist (nbs$sizes)), sep="")
+
             # The following index analyses N/M ratios only for M>4
             i5 <- which (part.sizesC > 4)
             if (j == 2 | length (i5) < 2) 
@@ -344,6 +351,12 @@ clust.sig <- function (city="nyc", method="complete", rescale=2)
             #} # end else nfrac, mfrac > 0.5
         } # end for j
         cat (rep ("-", 105), "\n", sep="")
+
+        # construct lists of nm values to be dumped to file for subsequent
+        # analysis in C++ randomHierarchies
+        nmvals [[i]] <- cbind (xdat [pks][1:(length (pks) - 1)], 
+                               mvals, mvals.all)
+
         # gvals then needs to be shorted to length of N & M:
         gvals <- gvals [1:length (mvals)]
         prop <- formatC (100 * sum (part.sizesC) / sum(part.sizes),
@@ -555,8 +568,29 @@ clust.sig <- function (city="nyc", method="complete", rescale=2)
          formatC (mean (snm, na.rm=TRUE), format="f", digits=4), " +/- ",
          formatC (sd (snm, na.rm=TRUE), format="f", digits=4), "\n", sep="")
 
-    #fname <- "fig_clust_sig.eps"
-    #junk <- dev.print (device = postscript, file=fname,
-    #    onefile = FALSE, width = fwd, height = fht, 
-    #    paper = "special", horizontal = FALSE)
+    # Then finally dump the sizes of contiguous partitions stored in mvals for
+    # subsequent analysis with C++ randomHierarchy. First pad all lists with
+    # zeros so they're the same size:
+    nmsize <- max (sapply (nmvals, dim)[1,])
+    nmvals <- lapply (nmvals, function (x) {
+                      n <- dim (x)[1]
+                      if (n < nmsize)
+                      {
+                          zeros <- array (rep (0, 3), dim=c(nmsize - n, 3))
+                          rbind (x, zeros)
+                      } else
+                          x })
+    # Then join them into one data frame
+    nmvals <- cbind (nmvals [[1]], nmvals [[2]], nmvals [[3]], nmvals [[4]])
+    nmvals <- data.frame (nmvals)
+    ttxt1 <- c ("to-h-", "to-k-", "from-h-", "from-k-")
+    ttxt2 <- c ("n", "m", "ma")
+    ttxt <- NULL
+    for (i in 1:4)
+        for (j in 1:3)
+            ttxt <- c (ttxt, paste (ttxt1 [i], ttxt2 [j], sep=""))
+    names (nmvals) <- ttxt
+    fname <- paste (city, "-cluster-sizes.txt", sep="")
+    write.table (nmvals, file=fname, row.names=FALSE, sep=",")
+    cat ("\nCluster sizes dumped to", fname, "\n")
 }

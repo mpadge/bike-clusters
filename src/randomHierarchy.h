@@ -57,17 +57,51 @@ typedef CGAL::Delaunay_triangulation_2<Kernel, Tds>                    Delaunay;
 typedef Kernel::Point_2                                                Point;
 typedef std::vector< std::pair <Point, unsigned> > Points_with_id;
 
-// final values need num_repeats = 10000 
-const int npts = 100, num_repeats = 10000; 
+class ClusterData
+{
+    protected:
+        bool _dir_to;
+        const std::string _dir = "./results/", _city;
+        std::string _fname;
+    public:
+        // final values need num_repeats = 10000 
+        const int npts = 100, num_repeats = 1000;
+        bmat nbs;
+        int numClusts;
+        //ivec clusterNumbers, numContig, numTot, cluster_ids, table;
+        ivec clusterNumbers, numContig, numTot, table; 
 
-dmat allocatePoints (base_generator_type * generator);
-ivec allocateClusters (int num_clusters, dmat *distmat, 
-        base_generator_type *generator);
-bmat getNeighbours (Points_with_id *pts);
-int getContiguousClusters (ivec *clIds, Points_with_id *pts, bmat *nbs, 
-        int nclusters, int nnew, base_generator_type *generator);
-ivec table (ivec *cluster_ids);
-dmat getdists (Points_with_id *pts);
+        ClusterData (std::string str, bool dir)
+            : _city (str), _dir_to (dir)
+        {
+            _fname = _dir + _city + "-cluster-sizes.txt";
+            readNumClusters ();
+            //cluster_ids.resize (npts);
+        }
+        ~ClusterData ()
+        {
+            clusterNumbers.resize (0);
+            numContig.resize (0);
+            numTot.resize (0);
+            nbs.resize (0, 0);
+        }
+
+        std::string getCity () 
+        {
+            std::string junk = _city;
+            std::transform (junk.begin(), junk.end(), junk.begin(), ::toupper);
+            return junk;
+        }
+        void readNumClusters ();
+        ivec allocateClusters (int num_clusters, dmat *distmat, 
+                base_generator_type *generator);
+        bmat getNeighbours (Points_with_id *pts);
+        int getContiguousClusters (ivec *clIds, Points_with_id *pts, bmat *nbs, 
+                int nclusters, int nnew, base_generator_type *generator);
+        void getTable (ivec *cluster_ids);
+        dmat getdists (Points_with_id *pts);
+}; // end class ClusterData
+
 
 
 #endif

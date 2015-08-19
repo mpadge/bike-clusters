@@ -118,9 +118,8 @@ int ClusterData::GetStations ()
         in_file.clear ();
         in_file.seekg (0); 
         getline (in_file, linetxt, '\n'); // header
-        while (!in_file.eof ()) 
+        while (getline (in_file, linetxt,'\n'))
         {
-            getline (in_file, linetxt,'\n');
             if (linetxt.length () > 1) 
             {
                 ipos = linetxt.find(',',0);
