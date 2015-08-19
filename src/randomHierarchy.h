@@ -68,15 +68,15 @@ class ClusterData
         const int npts = 100, num_repeats = 1000;
         bmat nbs;
         int numClusts;
-        //ivec clusterNumbers, numContig, numTot, cluster_ids, table;
-        ivec clusterNumbers, numContig, numTot, table; 
+        ivec clusterNumbers, numContig, numTot, cluster_ids, table;
+        dmat distmat;
 
         ClusterData (std::string str, bool dir)
             : _city (str), _dir_to (dir)
         {
             _fname = _dir + _city + "-cluster-sizes.txt";
             readNumClusters ();
-            //cluster_ids.resize (npts);
+            cluster_ids.resize (npts);
         }
         ~ClusterData ()
         {
@@ -84,6 +84,7 @@ class ClusterData
             numContig.resize (0);
             numTot.resize (0);
             nbs.resize (0, 0);
+            distmat.resize (0, 0);
         }
 
         std::string getCity () 
@@ -92,16 +93,15 @@ class ClusterData
             std::transform (junk.begin(), junk.end(), junk.begin(), ::toupper);
             return junk;
         }
+
         void readNumClusters ();
-        ivec allocateClusters (int num_clusters, dmat *distmat, 
+        void allocateClusters (int num_clusters, 
                 base_generator_type *generator);
-        bmat getNeighbours (Points_with_id *pts);
-        int getContiguousClusters (ivec *clIds, Points_with_id *pts, bmat *nbs, 
-                int nclusters, int nnew, base_generator_type *generator);
+        void getNeighbours (Points_with_id *pts);
+        int getContiguousClusters (Points_with_id *pts, int nclusters, int nnew,
+                base_generator_type *generator);
         void getTable (ivec *cluster_ids);
-        dmat getdists (Points_with_id *pts);
+        void getdists (Points_with_id *pts);
 }; // end class ClusterData
-
-
 
 #endif

@@ -104,64 +104,11 @@ int main (int argc, char *argv [])
     }
     // points can then be accessed by .first, which has [0:1] for (x,y), and
     // .second, which is the ID number
-    bmat nbs = clusterData.getNeighbours (&points);
-    dmat distmat = clusterData.getdists (&points);
-    ivec cluster_ids;
-    cluster_ids.resize (clusterData.npts);
+    clusterData.getNeighbours (&points);
+    clusterData.getdists (&points);
 
-    // I've not yet figured out how to use boost::assign to fill a boost vector
-    // - it only seems to work with std::vector!
-    int numClusts;
-    ivec numClusters, numContig, numTot;
-    if (dir_to)
-    {
-        numClusts = 5;
-        numClusters.resize (numClusts); 
-        numContig.resize (numClusts);
-        numTot.resize (numClusts);
-        std::cout << "Calculating " << clusterData.num_repeats << 
-            " random clusters for direction = TO:" << std::endl;
-        numClusters (0) = 5;
-        numClusters (1) = 7;
-        numClusters (2) = 9;
-        numClusters (3) = 12;
-        numClusters (4) = 15;
-        numContig (0) = 2;
-        numContig (1) = 2;
-        numContig (2) = 3;
-        numContig (3) = 3;
-        numContig (4) = 1;
-        numTot (0) = 2;
-        numTot (1) = 2;
-        numTot (2) = 3;
-        numTot (3) = 3;
-        numTot (4) = 2;
-    } else {
-        numClusts = 5;
-        numClusters.resize (numClusts); 
-        numContig.resize (numClusts);
-        numTot.resize (numClusts);
-        std::cout << "Calculating " << clusterData.num_repeats << 
-            " random clusters for direction = FROM:" << std::endl;
-        numClusters (0) = 9;
-        numClusters (1) = 12;
-        numClusters (2) = 15;
-        numClusters (3) = 17;
-        numClusters (4) = 21;
-        numContig (0) = 3;
-        numContig (1) = 2;
-        numContig (2) = 1;
-        numContig (3) = 4;
-        numContig (4) = 2;
-        numTot (0) = 3;
-        numTot (1) = 3;
-        numTot (2) = 2;
-        numTot (3) = 4;
-        numTot (4) = 3;
-    }
-
-    ivec counts (numClusters.size ());
-    for (int i=0; i<numClusters.size (); i++) 
+    ivec counts (clusterData.numClusts);
+    for (int i=0; i<clusterData.numClusts; i++) 
     {
         mn = sd = 0.0;
         counts (i) = 0;
@@ -170,38 +117,40 @@ int main (int argc, char *argv [])
             int mincount = 0;
             while (mincount < 5) 
             {
-                cluster_ids = clusterData.allocateClusters (numClusters [i], 
-                        &distmat, &generator);
-                clusterData.getTable (&cluster_ids);
+                clusterData.allocateClusters (clusterData.clusterNumbers [i], 
+                        &generator);
+                clusterData.getTable (&clusterData.cluster_ids);
                 mincount = 0;
                 for (int k=0; k<clusterData.table.size (); k++) 
                     if (clusterData.table (k) > mincount) 
                         mincount = clusterData.table (k);
             } // end while mincout < 5
 
-            tempi = clusterData.getContiguousClusters (&cluster_ids, &points, 
-                    &nbs, numClusters (i), numTot (i), &generator);
+            tempi = clusterData.getContiguousClusters (&points,
+                    clusterData.clusterNumbers (i),
+                    clusterData.numTot (i), &generator);
             mn += (double) tempi;
             sd += (double) tempi * (double) tempi;
 
-            if (tempi >= numContig (i)) 
+            if (tempi >= clusterData.numContig (i)) 
                 counts (i)++;
         } // end for j
         mn = mn / (double) clusterData.num_repeats;
         sd = sd / ((double) clusterData.num_repeats - 1.0) - mn * mn;
-        tt = (mn - (double) numContig (i)) * 
+        tt = (mn - (double) clusterData.numContig (i)) * 
             sqrt ((double) clusterData.num_repeats) / sqrt (sd);
 
         // Calculate cumulative probability:
         tempd = 1.0;
         for (int j=0; j<=i; j++)
-            tempd = tempd * (double) counts (j) / (double) clusterData.num_repeats;
+            tempd = tempd * (double) counts (j) / 
+                (double) clusterData.num_repeats;
 
-        std::cout << "[" << i << ", nc=" << numClusters (i) << "]: contig = " <<
-            mn << " +/- " << sd << " / observed = " << numContig (i) << 
-            "; (N, p, p_cum) = (" << counts (i) << ", " <<
-            (double) counts (i) / (double) clusterData.num_repeats << ", " << 
-            tempd << "); T = " << tt << std::endl;
+        std::cout << "[" << i << ", nc=" << clusterData.clusterNumbers (i) << 
+            "]: contig = " << mn << " +/- " << sd << " / observed = " <<
+            clusterData.numContig (i) << "; (N, p, p_cum) = (" << counts (i) <<
+            ", " << (double) counts (i) / (double) clusterData.num_repeats << 
+            ", " << tempd << "); T = " << tt << std::endl;
     } // end for i
 
     /* 
@@ -211,9 +160,6 @@ int main (int argc, char *argv [])
      * area to the left of T. For one-tailed tests, 1-pt will thus give the area
      * to the right.  > 1 - pt (T, 1000)
      */
-
-    nbs.resize (0, 0);
-    distmat.resize (0, 0);
 
     return 0;
 }
@@ -239,6 +185,52 @@ int main (int argc, char *argv [])
 
 void ClusterData::readNumClusters ()
 {
+    if (_dir_to)
+    {
+        numClusts = 5;
+        clusterNumbers.resize (numClusts); 
+        numContig.resize (numClusts);
+        numTot.resize (numClusts);
+        std::cout << "Calculating " << num_repeats << 
+            " random clusters for " << getCity () << " direction = TO:" << std::endl;
+        clusterNumbers (0) = 5;
+        clusterNumbers (1) = 7;
+        clusterNumbers (2) = 9;
+        clusterNumbers (3) = 12;
+        clusterNumbers (4) = 15;
+        numContig (0) = 2;
+        numContig (1) = 2;
+        numContig (2) = 3;
+        numContig (3) = 3;
+        numContig (4) = 1;
+        numTot (0) = 2;
+        numTot (1) = 2;
+        numTot (2) = 3;
+        numTot (3) = 3;
+        numTot (4) = 2;
+    } else {
+        numClusts = 5;
+        clusterNumbers.resize (numClusts); 
+        numContig.resize (numClusts);
+        numTot.resize (numClusts);
+        std::cout << "Calculating " << num_repeats << 
+            " random clusters for " << getCity () << " direction = FROM:" << std::endl;
+        clusterNumbers (0) = 9;
+        clusterNumbers (1) = 12;
+        clusterNumbers (2) = 15;
+        clusterNumbers (3) = 17;
+        clusterNumbers (4) = 21;
+        numContig (0) = 3;
+        numContig (1) = 2;
+        numContig (2) = 1;
+        numContig (3) = 4;
+        numContig (4) = 2;
+        numTot (0) = 3;
+        numTot (1) = 3;
+        numTot (2) = 2;
+        numTot (3) = 4;
+        numTot (4) = 3;
+    }
 }
 
 
@@ -250,7 +242,7 @@ void ClusterData::readNumClusters ()
  ************************************************************************
  ************************************************************************/
 
-ivec ClusterData::allocateClusters (int num_clusters, dmat *distmat, 
+void ClusterData::allocateClusters (int num_clusters, 
         base_generator_type * generator)
 {
     /*
@@ -279,7 +271,6 @@ ivec ClusterData::allocateClusters (int num_clusters, dmat *distmat,
     double dmin, tempd;
     bool check;
     std::vector <int> pt_list;
-    ivec cluster_ids; // The vector of cluster IDs that is returned at end.
     cluster_ids.resize (npts);
 
     boost::uniform_real <> uni_dist (0, 1);
@@ -335,8 +326,8 @@ ivec ClusterData::allocateClusters (int num_clusters, dmat *distmat,
                 // The search for closest point to i that is in a cluster, and
                 // get cluster_num.
                 for (int j=0; j<npts; j++)
-                    if (cluster_ids (j) > INT_MIN && (*distmat) (i, j) < tempd) {
-                        tempd = (*distmat) (i, j);
+                    if (cluster_ids (j) > INT_MIN && distmat (i, j) < tempd) {
+                        tempd = distmat (i, j);
                         tempi = j;
                     }
                 // end for j - tempi is the closest point to i that is in a
@@ -365,9 +356,9 @@ ivec ClusterData::allocateClusters (int num_clusters, dmat *distmat,
             // cluster.
             dmin = 999999.9;
             for (int i=0; i<npts; i++)
-                if (cluster_ids (i) > INT_MIN && (*distmat) (tempi, i) < dmin) 
+                if (cluster_ids (i) > INT_MIN && distmat (tempi, i) < dmin) 
                 {
-                    dmin = (*distmat) (tempi, i);
+                    dmin = distmat (tempi, i);
                     nearest_in = i;
                     this_cluster = cluster_ids (i);
                 } // end if
@@ -377,9 +368,9 @@ ivec ClusterData::allocateClusters (int num_clusters, dmat *distmat,
             dmin = 999999.9;
             for (int i=0; i<npts; i++)
                 if (cluster_ids (i) == INT_MIN && 
-                        (*distmat) (nearest_in, i) < dmin) 
+                        distmat (nearest_in, i) < dmin) 
                 {
-                    dmin = (*distmat) (nearest_in, i);
+                    dmin = distmat (nearest_in, i);
                     tempi = i;
                 }
         }
@@ -395,8 +386,6 @@ ivec ClusterData::allocateClusters (int num_clusters, dmat *distmat,
     } // end while not_in_clust.size () > 0
 
     pt_list.resize (0);
-
-    return cluster_ids;
 }; // end function allocateClusters
 
 
@@ -408,13 +397,13 @@ ivec ClusterData::allocateClusters (int num_clusters, dmat *distmat,
  ************************************************************************
  ************************************************************************/
 
-bmat ClusterData::getNeighbours (Points_with_id *points)
+void ClusterData::getNeighbours (Points_with_id *points)
 {
     int tempi, tempj;
 
     Delaunay triangulation;
     triangulation.insert ((*points).begin (), (*points).end ());
-    bmat nbs (npts, npts);
+    nbs.resize (npts, npts);
     for (int i=0; i<npts; i++) 
         nbs (i, i) = false;
     for (int i=0; i<(npts - 1); i++)
@@ -435,8 +424,6 @@ bmat ClusterData::getNeighbours (Points_with_id *points)
             } // end for j
         } // end for i
     }
-
-    return nbs;
 } // end function getNeighbours
 
 
@@ -448,12 +435,12 @@ bmat ClusterData::getNeighbours (Points_with_id *points)
  ************************************************************************
  ************************************************************************/
 
-int ClusterData::getContiguousClusters (ivec *clIds, Points_with_id *pts, bmat *nbs, 
+int ClusterData::getContiguousClusters (Points_with_id *pts, 
         int nclusters, int nnew, base_generator_type *generator)
 {
     int tempi, maxClusterSize = 0, clustSize;
     bool check;
-    std::vector <int> clustIds;
+    std::vector <int> clustIdsTemp;
 
     boost::uniform_real <> uni_dist (0, 1);
     boost::variate_generator <base_generator_type&,
@@ -462,11 +449,11 @@ int ClusterData::getContiguousClusters (ivec *clIds, Points_with_id *pts, bmat *
     for (int i=0; i<20; i++) 
         tempi = round (100.0 * runif ());
     // Then seleect random clusters
-    clustIds.resize (0);
+    clustIdsTemp.resize (0);
     for (int i=0; i<nnew; i++) 
     {
         tempi = floor (runif () * (double) nclusters);
-        clustIds.push_back (tempi);
+        clustIdsTemp.push_back (tempi);
     }
 
     for (int i=0; i<(nnew - 1); i++) 
@@ -476,9 +463,9 @@ int ClusterData::getContiguousClusters (ivec *clIds, Points_with_id *pts, bmat *
         {
             check = false;
             for (int k=0; k<npts; k++)
-                if ((*clIds) (k) == clustIds [i])
+                if (cluster_ids (k) == clustIdsTemp [i])
                     for (int m=0; m<npts; m++)
-                        if ((*nbs) (k, m) && (*clIds) (m) == clustIds [j]) 
+                        if (nbs (k, m) && cluster_ids (m) == clustIdsTemp [j]) 
                         {
                             if (!check) 
                             {
@@ -491,7 +478,7 @@ int ClusterData::getContiguousClusters (ivec *clIds, Points_with_id *pts, bmat *
         if (clustSize > maxClusterSize) 
             maxClusterSize = clustSize;
     }
-    clustIds.resize (0);
+    clustIdsTemp.resize (0);
 
     return maxClusterSize;
 } // end function getContiguousClusters
@@ -530,10 +517,10 @@ void ClusterData::getTable (ivec *cluster_ids)
  ************************************************************************
  ************************************************************************/
 
-dmat ClusterData::getdists (Points_with_id *pts)
+void ClusterData::getdists (Points_with_id *pts)
 {
     double x [2], y [2];
-    dmat distmat (npts, npts);
+    distmat.resize (npts, npts);
 
     // points can then be accessed by .first, which has [0:1] for (x,y), and
     // .second, which is the ID number
@@ -552,6 +539,4 @@ dmat ClusterData::getdists (Points_with_id *pts)
             distmat (j, i) = distmat (i, j);
         } // end for j
     } // end for i
-
-    return distmat;
 }
