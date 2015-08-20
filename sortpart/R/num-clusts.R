@@ -76,7 +76,7 @@ num.clusts <- function (city="nyc", plot=FALSE, method="complete")
     tvals <- cbind (t0 [,1], tk [,1], t0 [,2], tk [,2])
 
     # ****** Maximum Number of Peaks is set here to 15 *****
-    np.lim <- (2:15)
+    np.lim <- (1:15)
 
     gvals <- hvals <- nmax <- array (NA, dim=c(length (np.lim), 4))
     rescale <- 2 # If 3, then O(3) bounds are calculated
@@ -91,47 +91,39 @@ num.clusts <- function (city="nyc", plot=FALSE, method="complete")
                     data=data.frame (y=y, nc=nc),
                     start=list (a=0, b=-0.1, cc=-10, d=0))
         y <- summary (mod)$residuals
-        pks <- which (diff (sign (diff (y))) == -2) + 1
-        # And if the series initially decreases, the first point is added as a
-        # peak, because gaps between peaks are analysed, and this allows the
-        # first peak to be properly detected. 
-        if (y [1] > y [2])
-            pks <- c (1, pks)
+        pks <- which (diff (sign (diff (y))) == -2) + 1 # index into nc
 
+        # Sometimes there are 2 peaks separated by 3 intervening values, yet
+        # with the central one also being a local peak. Thus if 3 peaks are each
+        # separated by only one value, *AND* if the central one is lower than
+        # the outer two, then remove the central one from pks.
+        i2 <- which (diff (pks) == 2)
+        i2 <- i2 [which (diff (i2) == 1)] + 1 # indx to central values
+        # Then interpolate between two adjacent peaks, and exclude those lying
+        # above this interpolation
+        yinterp <- (y[pks [i2 - 1]] + y [pks [i2 + 1]]) / 2
+        imid <- which (y [pks [i2]] < yinterp)
+        pks <- pks [which (!pks %in% pks [i2] [imid])]
+
+        # Store first peak, with analyses of heights only starting from 2nd
+        nmax [1, i] <- nc [pks [1]]
+        
         # The following is quick, so is done as a loop over number of peaks,
         # rather than lapply
-        for (j in 1:length (np.lim)) { 
+        for (j in 2:length (np.lim)) { 
             pks.j <- pks [1:min (np.lim [j], length (pks))] 
             # pks.j are then the positions of the first np.lim[j] pks, with the
             # following line making a continuous indx.
             indx <- 1:max (pks.j)
-            ulbounds <- array (NA, dim=c(length (indx), 2))
-            
-            dfr <- data.frame (x=nc [indx], y=tvals [indx, i])
-            for (k in 1:2) {
-                if (rescale == 2) {
-                    mod <- nlrq (y ~ a * x ^ 2 + b * x + cc, data=dfr, 
-                                 tau=ybounds [k], start=list(a=0, b=0, cc=mean(dfr$y)))
-                } else if (rescale == 3) {
-                    mod <- nlrq (y ~ a * x ^ 3 + b * x ^ 2 + cc * x + dd, data=dfr, 
-                                 tau=ybounds [k], start=list(a=0, b=0, cc=0, dd=mean(dfr$y)))
-                }
-                ulbounds [,k] <- predict (mod, newdata=dfr$x)
-            } # end for j
-            dfr$y <- 2 * (dfr$y - ulbounds [,2]) / (ulbounds [,1] - ulbounds [,2]) - 1
+            yj <- poly.rescale (matrix (tvals [indx, i]), rescale=rescale)
 
-            nmax [j, i] <- max (nc [pks.j]) + 1
-            # The first of the following lines calculates G-values including the
-            # difference between the first peak and one. While this is strictly
-            # correct, it is a stricter requirement than what is placed upon the
-            # simulated series used to calculate the probabilities. The actual
-            # calculation is therefore based only on the mean inter-peak spacing,
-            # without presuming that partitioning starts at one.
-            #gvals [j, i] <- mean (c (diff (nc [pks.j]), nc [pks.j] [1] - 1))
-            gvals [j, i] <- mean (c (diff (nc [pks.j])))
-            dfr <- dfr [1:max (pks.j), ]
-            non.pks <- which (!1:length (dfr$y) %in% pks)
-            hvals [j, i] <- mean (dfr$y [pks.j]) - mean (dfr$y [non.pks])
+            nmax [j, i] <- nc [max (pks.j)]
+            # Calculate G-values from the mean inter-peak spacing, without
+            # presuming that partitioning starts at one.
+            gvals [j, i] <- mean (diff (pks.j))
+            # Always exclude very first point from calculations
+            non.pks <- which (!1:length (yj) %in% c (1, pks))
+            hvals [j, i] <- mean (yj [pks.j]) - mean (yj [non.pks])
         } # end for j
     } # end for i
     
@@ -155,7 +147,7 @@ num.clusts <- function (city="nyc", plot=FALSE, method="complete")
         par (mfrow=c(1,3)) 
         par (mar=c(2.5,2.5,2,1), mgp=c(1.3,0.4,0), ps=10, tcl=-0.2)
         for (i in 1:3) {
-            ylims <- range (ydat [[i]])
+            ylims <- range (ydat [[i]], na.rm=TRUE)
             #if (i == 3) { ylims [2] <- 0.1 }
             plot (np.lim, ydat [[i]] [,1], "l", col=cols [1], lty=ltys [1], 
                   ylim=ylims, xlab="Number of peaks", ylab=ylabs [i])

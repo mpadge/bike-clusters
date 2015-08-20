@@ -55,7 +55,7 @@ calc.pnc <- function (city = "nyc", method="complete", nrpts=100, rescale=2)
     pr.pk.hts <- num.samples <- array (NA, dim=c(nrow (dat), 4))
     
     pb <- txtProgressBar (0, 100, char="=", style=3)
-    for (i in 1:nrow (dat)) {
+    for (i in 2:nrow (dat)) {
         # First calculate the "average" length of each series:
         nvals <- as.numeric (dat [i, 10:13])
         if (length (which (nvals == min (nvals))) == 
@@ -87,8 +87,32 @@ calc.pnc <- function (city = "nyc", method="complete", nrpts=100, rescale=2)
             
                 pks <- apply (sm, 2, function (x) {
                     which (diff (sign (diff (x))) == -2) + 1    })
+                # As in num-clusts, exclude any interening points surrounded by
+                # two adjacent peaks, yet of lower value. See comments in
+                # num-clusts.
+                i2 <- lapply (pks, function (x) which (diff (x) == 2))
+                i2 <- lapply (i2, function (x) x [which (diff (x) == 1)] + 1)
+                i2indx <- which (sapply (i2, function (x) length (x) > 0))
+                if (length (i2indx) > 0)
+                {
+                    yinterp <- mapply (function (sf, pksf, i2f) 
+                                        (sf [pksf [i2f - 1]] + 
+                                        sf [pksf [i2f + 1]]) / 2,
+                                       sf=sml, pksf=pks, i2f=i2)
+                    imid <- mapply (function (i2f, sf, pksf, yi)
+                                which (sf [pksf [i2f]] < yi),
+                                i2f=i2, sf=sml, pksf=pks, yi=yinterp)
+                    pks <- mapply (function (i2f, y, pksf)
+                                   pksf [which (!pksf %in% pksf [i2f] [y])],
+                                   i2f=i2, y=imid, pksf=pks)
+                }
+                    
+
+                # Note here, as in num.clusts, the c (1, x), which excludes the
+                # first point from being included in calculations of peak
+                # heights.
                 non.pks <- lapply (pks, function (x) {
-                    which (!1:n %in% x) })
+                    which (!1:n %in% c (1, x)) })
                 pk.height <- mapply (function (x, y, z) {
                     mean (z [x]) - mean (z [y])}, x=pks, y=non.pks, z=sml)
                 pr.pk.height <- lapply (pk.heights.i, function (x) {

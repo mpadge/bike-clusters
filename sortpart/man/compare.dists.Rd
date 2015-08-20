@@ -4,7 +4,7 @@
 \alias{compare.dists}
 \title{compare.dists}
 \usage{
-\method{compare}{dists}(city = "nyc", method = "complete", xmax = 36,
+compare.dists(city = "nyc", method = "complete", xmax = 36,
   ycut = c(1.2, 1.3))
 }
 \arguments{
