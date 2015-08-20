@@ -3,9 +3,8 @@
 #' Calculates peak height and G-values as a function of numbers of clusters, to
 #' determine the number of clusters that should be used for each of the four
 #' data series. For plot=TRUE, it also reads the table of the same values (from
-#' "results_prob_m.txt") to plot the probabilities of the observed peak heights,
-#' as calcualted from calc.pnc (). (The latter routine itself requires, however,
-#' the initial output of num.clusts.)
+#' "results_prob_m.txt") to plot the additional probabilities of the observed
+#' peak heights, as calcualted from calc.pnc (). 
 #'
 #' These p-values are then used to determine the appropriate number of (most
 #' highly significant) peaks to be used for analysing each series in the main
@@ -84,7 +83,20 @@ num.clusts <- function (city="nyc", plot=FALSE, method="complete")
     ybounds <- c (0.99, 0.01) # Upper and lower bounds for nlqr regressions
     
     for (i in 1:4) { # to-hc, to-km, from-hc, from-km
-        pks <- which (diff (sign (diff (tvals [,i]))) == -2) + 1
+        # T-values often decrease so dramatically at the start that early peaks
+        # are in fact just inflection points in the original series. They are
+        # rescaled here using an O(3) fit to ensure detection of all peaks.
+        y <- tvals [,i]
+        mod <- nls (y ~ a * nc ^ 3 + b * nc ^ 2 + cc * nc + d,
+                    data=data.frame (y=y, nc=nc),
+                    start=list (a=0, b=-0.1, cc=-10, d=0))
+        y <- summary (mod)$residuals
+        pks <- which (diff (sign (diff (y))) == -2) + 1
+        # And if the series initially decreases, the first point is added as a
+        # peak, because gaps between peaks are analysed, and this allows the
+        # first peak to be properly detected. 
+        if (y [1] > y [2])
+            pks <- c (1, pks)
 
         # The following is quick, so is done as a loop over number of peaks,
         # rather than lapply
@@ -107,7 +119,7 @@ num.clusts <- function (city="nyc", plot=FALSE, method="complete")
                 ulbounds [,k] <- predict (mod, newdata=dfr$x)
             } # end for j
             dfr$y <- 2 * (dfr$y - ulbounds [,2]) / (ulbounds [,1] - ulbounds [,2]) - 1
-            
+
             nmax [j, i] <- max (nc [pks.j]) + 1
             # The first of the following lines calculates G-values including the
             # difference between the first peak and one. While this is strictly

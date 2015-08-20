@@ -18,9 +18,8 @@ data.frame
 Calculates peak height and G-values as a function of numbers of clusters, to
 determine the number of clusters that should be used for each of the four
 data series. For plot=TRUE, it also reads the table of the same values (from
-"results_prob_m.txt") to plot the probabilities of the observed peak heights,
-as calcualted from calc.pnc (). (The latter routine itself requires, however,
-the initial output of num.clusts.)
+"results_prob_m.txt") to plot the additional probabilities of the observed
+peak heights, as calcualted from calc.pnc ().
 }
 \details{
 These p-values are then used to determine the appropriate number of (most

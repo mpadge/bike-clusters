@@ -79,11 +79,11 @@ calc.pnc <- function (city = "nyc", method="complete", nrpts=100, rescale=2)
             g <- gvals0 [1]
             indx <- which (gvals >= g)
             num.samples [i, ] <- rep (length (indx), 4)
+            prob.g <- length (indx) / nrpts
             if (length (indx > 1)) {
                 sm <- simvals [, indx]
                 sm <- poly.rescale (sm, rescale=rescale)
                 sml <- as.list (as.data.frame (sm))
-                prob.g <- length (indx) / nrpts
             
                 pks <- apply (sm, 2, function (x) {
                     which (diff (sign (diff (x))) == -2) + 1    })
