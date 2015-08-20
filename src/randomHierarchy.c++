@@ -78,19 +78,20 @@ int main (int argc, char *argv [])
             else
                 city = "nyc";
         } else if (tempi < 2) {
-            method = *argv;
-            std::transform (method.begin(), method.end(), method.begin(), 
-                    ::tolower);
-            if (method.substr (0, 2) == "co")
-                method = "complete";
-            else
-                method = "k-means";
-        } else {
             dir_to_i = atoi (*argv);
             if (dir_to_i == 0) 
                 dir_to = true;
             else 
                 dir_to = false;
+        } else {
+            method = *argv;
+            std::transform (method.begin(), method.end(), method.begin(), 
+                    ::tolower);
+            std::cout << "---" << method << "---" << std::endl;
+            if (method.substr (0, 2) == "co")
+                method = "complete";
+            else
+                method = "k-means";
         }
         tempi++;
     }
