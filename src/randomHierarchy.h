@@ -65,7 +65,7 @@ class ClusterData
         std::string _fname;
     public:
         // final values need num_repeats = 10000 
-        const int npts = 100, num_repeats = 1000;
+        const int npts = 100, num_repeats = 100;
         bmat nbs;
         int numClusts;
         ivec clusterNumbers, numContig, numTot, cluster_ids, table;
@@ -110,7 +110,7 @@ class ClusterData
         void getNeighbours (Points_with_id *pts);
         int getContiguousClusters (Points_with_id *pts, int nclusters, int nnew,
                 base_generator_type *generator);
-        void getTable (ivec *cluster_ids);
+        void getTable ();
         void getdists (Points_with_id *pts);
 }; // end class ClusterData
 

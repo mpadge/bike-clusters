@@ -40,7 +40,7 @@ calc.pnc <- function (city = "nyc", method="complete", nrpts=100, rescale=2)
     # right M-values, therefore nrpts is doubled.
     
     dat <- num.clusts (city=city, method=method, plot=FALSE)
-    cat ("\rcalculating peak probabilities for ", city, " ", method, "\n", sep="")
+    cat ("\rcalculating peak probabilities for", toupper (city), method, "\n")
     dat <- dat [[2]] 
     # [[1]] is just the names of the four groups (to-h, to-k, from-h, from-k)
     # dat has 13 columns of $nc (number of peaks) plus 4 groups of G-values,

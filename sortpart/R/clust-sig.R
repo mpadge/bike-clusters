@@ -190,7 +190,7 @@ clust.sig <- function (city="nyc", method="complete", rescale=2)
     tvals <- cbind (t0 [,1], tk [,1], t0 [,2], tk [,2])
     gvals <- dvals <- rep (NA, 4)
     npeaks <- get.num.clusts (city=city, method=method) 
-    # returns $num.clusts and $pmin (each of len=4)
+    # returns $num.pks, $num.clusts and $pmin (each of len=4)
 
     # The following are for subsequent analyses of mean values
     gout.hc <- gout.km <- nout.hc <- nout.km <- mout.hc <- mout.km <- NULL 
@@ -216,8 +216,8 @@ clust.sig <- function (city="nyc", method="complete", rescale=2)
         # Find the position of the final peak (determined by npeaks), and fit the
         # nlrq lines only to that point.
         pks <- which (diff (sign (diff (tvals [,i]))) == -2) + 1
-        if (length (pks) > npeaks$num.clusts [i])
-            pks <- pks [1:npeaks$num.clusts [i]]
+        if (length (pks) > npeaks$num.pks [i])
+            pks <- pks [1:npeaks$num.pks [i]]
         indx <- 1:max (pks)
         ulbounds <- array (NA, dim=c(length (indx), 2))
 
@@ -282,7 +282,7 @@ clust.sig <- function (city="nyc", method="complete", rescale=2)
             # To analyse ALL new partitions, instead of the just the contiguous
             # ones, insert this following definition of npeaks (returned from
             # get.num.clusts) above:
-            #npeaks$num.clusts <- rep (50, 4)
+            #npeaks$num.pks <- rep (50, 4)
             # And then use the following definitions of part.sizesC and mvals:
             #part.sizesC <- c (part.sizesC, 
             #                  unlist (lapply (nbs, function (x) sum (x))))

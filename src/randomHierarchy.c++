@@ -126,14 +126,15 @@ int main (int argc, char *argv [])
             int mincount = 0;
             while (mincount < 5) 
             {
-                clusterData.allocateClusters (clusterData.clusterNumbers [i], 
+                clusterData.allocateClusters (clusterData.clusterNumbers (i), 
                         &generator);
-                clusterData.getTable (&clusterData.cluster_ids);
+                clusterData.getTable ();
                 mincount = 0;
                 for (int k=0; k<clusterData.table.size (); k++) 
                     if (clusterData.table (k) > mincount) 
                         mincount = clusterData.table (k);
             } // end while mincout < 5
+            clusterData.getTable ();
 
             tempi = clusterData.getContiguousClusters (&points,
                     clusterData.clusterNumbers (i),
@@ -507,20 +508,20 @@ int ClusterData::getContiguousClusters (Points_with_id *pts,
  ************************************************************************
  ************************************************************************/
 
-void ClusterData::getTable (ivec *cluster_ids)
+void ClusterData::getTable ()
 {
     int maxc = 0;
 
     for (int i=0; i<npts; i++)
-        if ((*cluster_ids) (i) > maxc)
-            maxc = (*cluster_ids) (i);
+        if (cluster_ids (i) > maxc)
+            maxc = cluster_ids (i);
 
     table.resize (maxc + 1);
     for (int i=0; i<maxc; i++) 
         table (i) = 0;
 
     for (int i=0; i<npts; i++)
-        table ((*cluster_ids) (i))++;
+        table (cluster_ids (i))++;
 }; // end function table
 
 
