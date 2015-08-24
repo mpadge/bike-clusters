@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     bool dir_to;
     int count, dir_to_i;
     double tempd, sum_mn, sum_sd;
-    std::string fname, city = "nyc", method="complete";
+    std::string fname, city, method;
     std::ofstream out_file;
     base_generator_type generator(42u);
     time_t seed;
@@ -74,65 +74,90 @@ int main(int argc, char *argv[])
     // These hold averages for k-means of the 10 repeats
     double meanProp, sdProp, d_in, d_out, d_total;
 
-    std::cout << std::endl << "_____________________________________________" << 
-        "____________________________________________" << std::endl;
-    std::cout << "|\t\t\t\t\t\t\t\t\t\t\t|" << std::endl;
-    std::cout << "|\t./ClustersActual with three parameters:\t\t\t\t\t\t|" << std::endl;
-    std::cout << "|\t\t1. <city> =  " <<
-        "<london/nyc/boston/chicago/washingtondc>\t\t\t|" << std::endl;
-    std::cout << "|\t\t2. <method> = <ward/complete/k-means/skater>\t\t\t\t|" <<
-        std::endl;
-    std::cout << "|\t\t3. <direction> = <0 for TO, otherwise FROM>\t\t\t\t|" <<
-        std::endl;
-    std::cout << "|\t\t\t\t\t\t\t\t\t\t\t|" << std::endl;
-    std::cout << "_____________________________________________" << 
-        "____________________________________________" << std::endl <<
-        std::endl;
+    try {
+        boost::program_options::options_description generic("Generic options");
+        generic.add_options()
+            ("version,v", "print version std::string")
+            ("help", "produce help message")    
+            ;
+
+        boost::program_options::options_description config("Configuration");
+        config.add_options()
+            ("city,c", boost::program_options::value <std::string> 
+                (&city)->default_value ("nyc"), "city")
+            ("method,m", boost::program_options::value <std::string> 
+                (&method)->default_value ("complete"), "method")
+            ("dir_to,d", 
+                boost::program_options::value <int> (&dir_to_i)->default_value (0), 
+                 "direction to")
+            ;
+
+        // Not used here
+        boost::program_options::options_description hidden("Hidden options");
+        hidden.add_options()
+            ("hidden-option", boost::program_options::value
+                <std::vector<std::string> >(), "hidden option")
+            ;
+
+        boost::program_options::options_description cmdline_options;
+        cmdline_options.add(generic).add(config).add(hidden);
+
+        boost::program_options::options_description visible("Allowed options");
+        visible.add(generic).add(config);
+
+        boost::program_options::variables_map vm;
+        store(boost::program_options::command_line_parser(argc, argv).
+                options(cmdline_options).run(), vm);
+
+        notify(vm);
+
+        if (vm.count("help")) {
+            std::cout << visible << std::endl;
+            return 0;
+        }
+
+        if (vm.count("version")) {
+            std::cout << "randomHierarchy, version 1.0" << std::endl;
+            return 0;
+        }
+
+    }
+    catch(std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+        return 1;
+    }    
 
     time (&seed);
     generator.seed (static_cast <unsigned int> (seed));
 
-    count = 0;
-    city = "nyc";
+    std::transform (city.begin(), city.end(), city.begin(), ::tolower);
+    if (city.substr (0, 2) == "lo")
+        city = "london";
+    else if (city.substr (0, 2) == "bo")
+        city = "boston";
+    else if (city.substr (0, 2) == "ch")
+        city = "chicago";
+    else if (city.substr (0, 2) == "wa" || city.substr (0, 2) == "dc")
+        city = "washingtondc";
+    else
+        city = "nyc";
+            
+    std::transform (method.begin(), method.end(), method.begin(), ::tolower);
+    if (method.substr (0, 2) == "co")
+        method = "complete";
+    else if (method.substr (0, 2) == "wa")
+        method = "ward";
+    else if (method.substr (0, 2) == "sk")
+        method = "skater";
+    else if (method.substr (0, 1) == "k")
+        method = "k-means";
 
-    while (*++argv != NULL)
-    {
-        if (count < 1)
-        {
-            city = *argv;
-            std::transform (city.begin(), city.end(), city.begin(), ::tolower);
-            if (city.substr (0, 2) == "lo")
-                city = "london";
-            else if (city.substr (0, 2) == "bo")
-                city = "boston";
-            else if (city.substr (0, 2) == "ch")
-                city = "chicago";
-            else if (city.substr (0, 2) == "wa" || city.substr (0, 2) == "dc")
-                city = "washingtondc";
-            else
-                city = "nyc";
-        } else if (count < 2) {
-            method = *argv;
-            std::transform (method.begin(), method.end(), 
-                    method.begin(), ::tolower);
-            if (method.substr (0, 2) == "co")
-                method = "complete";
-            else if (method.substr (0, 2) == "wa")
-                method = "ward";
-            else if (method.substr (0, 2) == "sk")
-                method = "skater";
-            else if (method.substr (0, 1) == "k")
-                method = "k-means";
-
-        } else {
-            dir_to_i = atoi (*argv);
-            if (dir_to_i == 0) 
-                dir_to = true;
-            else 
-                dir_to = false;
-        }
-        count++;
-    }
+    if (dir_to_i == 0) 
+        dir_to = true;
+    else 
+        dir_to = false;
+    
     Clusters clusters (city, method);
     std::cout << "Calculating actual distances ridden for:" << std::endl;
     std::cout << "\tCity = " << city << "; clustering method = " <<
@@ -150,6 +175,7 @@ int main(int argc, char *argv[])
     else
         fname += "from-" + method + ".txt";
     std::cout << "writing to file:" << fname.c_str () << std::endl;
+
     out_file.open (fname.c_str(), std::ios::out);
     out_file << "nc,\tprop.mn,\tprop.sd,\td.in,\td.out,\tprop.total" << std::endl;
     for (int nc=2; nc <= clusters.returnMaxClustSize (); nc++) {

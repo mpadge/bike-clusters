@@ -81,7 +81,7 @@ int main (int argc, char *argv [])
                 boost::program_options::value <int> (&npts)->default_value (100),
                 "number of points")
             ("nrpts,r",
-                boost::program_options::value <int> (&nrpts)->default_value (100),
+                boost::program_options::value <int> (&nrpts)->default_value (1000),
                 "number of repeats")
             ;
 

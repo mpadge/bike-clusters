@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
     int tempi;
     double tempd, sum_mn, sum_sd;
-    std::string city = "nyc", cityCaps;
+    std::string city, cityCaps;
     std::ofstream out_file;
     base_generator_type generator(42u);
     time_t seed;
@@ -73,33 +73,68 @@ int main(int argc, char *argv[])
     time (&seed);
     generator.seed (static_cast <unsigned int> (seed));
 
+    try {
+        boost::program_options::options_description generic("Generic options");
+        generic.add_options()
+            ("version,v", "print version std::string")
+            ("help", "produce help message")    
+            ;
+
+        boost::program_options::options_description config("Configuration");
+        config.add_options()
+            ("city,c", boost::program_options::value <std::string> 
+                (&city)->default_value ("nyc"), "city")
+            ;
+
+        // Not used here
+        boost::program_options::options_description hidden("Hidden options");
+        hidden.add_options()
+            ("hidden-option", boost::program_options::value
+                <std::vector<std::string> >(), "hidden option")
+            ;
+
+        boost::program_options::options_description cmdline_options;
+        cmdline_options.add(generic).add(config).add(hidden);
+
+        boost::program_options::options_description visible("Allowed options");
+        visible.add(generic).add(config);
+
+        boost::program_options::variables_map vm;
+        store(boost::program_options::command_line_parser(argc, argv).
+                options(cmdline_options).run(), vm);
+
+        notify(vm);
+
+        if (vm.count("help")) {
+            std::cout << visible << std::endl;
+            return 0;
+        }
+
+        if (vm.count("version")) {
+            std::cout << "randomHierarchy, version 1.0" << std::endl;
+            return 0;
+        }
+
+    }
+    catch(std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+        return 1;
+    }    
     distStats clustDists;
 
-    std::cout << std::endl << "_____________________________________________" << 
-        "____________________________________________" << std::endl;
-    std::cout << "|\t\t\t\t\t\t\t\t\t\t\t|" << std::endl;
-    std::cout << "|\t./ClustersNeutral <city> =  " <<
-        "<london/nyc/boston/chicago/washingtondc>\t\t|" << std::endl;
-    std::cout << "|\t\t\t\t\t\t\t\t\t\t\t|" << std::endl;
-    std::cout << "_____________________________________________" << 
-        "____________________________________________" << std::endl <<
-        std::endl;
+    std::transform (city.begin(), city.end(), city.begin(), ::tolower);
+    if (city.substr (0, 2) == "lo")
+        city = "london";
+    else if (city.substr (0, 2) == "bo")
+        city = "boston";
+    else if (city.substr (0, 2) == "ch")
+        city = "chicago";
+    else if (city.substr (0, 2) == "wa" || city.substr (0, 2) == "dc")
+        city = "washingtondc";
+    else
+        city = "nyc";
 
-    while (*++argv != NULL)
-    {
-        city = *argv;
-        std::transform (city.begin(), city.end(), city.begin(), ::tolower);
-        if (city.substr (0, 2) == "lo")
-            city = "london";
-        else if (city.substr (0, 2) == "bo")
-            city = "boston";
-        else if (city.substr (0, 2) == "ch")
-            city = "chicago";
-        else if (city.substr (0, 2) == "wa" || city.substr (0, 2) == "dc")
-            city = "washingtondc";
-        else
-            city = "nyc";
-    }
     cityCaps = city;
     std::transform (cityCaps.begin(), cityCaps.end(), 
             cityCaps.begin(), ::toupper); 
