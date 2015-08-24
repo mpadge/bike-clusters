@@ -86,6 +86,12 @@ class ClusterData
         std::vector <int> _StationIndex;
     public:
         std::string fileName;
+        bvec has_data; 
+        // has_data is an index of stations with data, which is important only
+        // for london, for which several stations have no lat-lons, and thus no
+        // distances. nno_data records number of stations with no data.
+        // (stations are 35, 43, 79, 224, 277, 409).
+        int nnoData;
         dmat ntrips, r2, dists;
         ivec clusterIDs;
 
@@ -108,6 +114,10 @@ class ClusterData
                 MakeStationIndex ();
             readDMat ();
             readNTrips ();
+            nnoData = 0;
+            for (int i=0; i<_numStations; i++)
+                if (!has_data (i))
+                    nnoData++;
         }
         ~ClusterData ()
         {
@@ -116,6 +126,7 @@ class ClusterData
             r2.resize (0, 0);
             dists.resize (0, 0);
             clusterIDs.resize (0);
+            has_data.resize (0);
         }
 
         std::string returnDirName ()
@@ -146,8 +157,10 @@ class ClusterData
             ntrips.resize (_numStations, _numStations);
             r2.resize (_numStations, _numStations);
             dists.resize (_numStations, _numStations);
+            has_data.resize (_numStations);
             for (int i=0; i<_numStations; i++)
             {
+                has_data (i) = false;
                 for (int j=0; j<_numStations; j++)
                 {
                     ntrips (i, j) = DOUBLE_MIN;

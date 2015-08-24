@@ -243,11 +243,9 @@ void ClusterData::MakeStationIndex ()
 int ClusterData::readDMat ()
 {
     std::string distFile;
-    if (_city == "london")
-        distFile = _dirName + "data/station_dists_london.txt";
-    else if (_city == "nyc")
+    if (_city == "nyc")
         distFile = _dirName + "data/station_dists_nyc.txt";
-    else if (_city == "boston" || _city == "chicago" || _city == "washingtondc")
+    else 
         distFile = _dirName + "results/stationDistsMat-" + _city + ".csv";
 
     int count, ipos, tempi [2];
@@ -260,7 +258,7 @@ int ClusterData::readDMat ()
     in_file.seekg (0); 
     count = 0;
 
-    if (_city == "london" || _city == "nyc")
+    if (_city == "nyc")
     {
         while (getline (in_file, linetxt, '\n')) {
             ipos = linetxt.find(',',0);
@@ -283,8 +281,8 @@ int ClusterData::readDMat ()
     else 
     {
         /*
-         * Distances between bike stations in boston, chicago, and washington,
-         * and between train stations are read direct from matrix
+         * All other distances, including between train stations, are read
+         * direct from matrix
          */
         while (getline (in_file, linetxt, '\n'))
             count++;
@@ -313,9 +311,20 @@ int ClusterData::readDMat ()
                     atof (linetxt.c_str ());
             } // end for i over rows
         } // end else count == _numStations
+        // london at this point has some rows of dists with no positive entries
     }
 
     in_file.close ();
+
+    for (int i=0; i<_numStations; i++)
+    {
+        d = 0.0;
+        for (int j=0; j<_numStations; j++)
+            if (dists (i, j) > 0.0)
+                d += dists (i, j);
+        if (d > 0.0)
+            has_data (i) = true;
+    }
 
     return 0;
 } // end ClusterData::ReadDMat
@@ -364,6 +373,21 @@ int ClusterData::readNTrips ()
         ntrips (ix++, jx) = atof (linetxt.c_str ());
     } 
     in_file.close();
+    // just like dists, london at this point has some rows of ntrips with no
+    // positive entries (although only 2, while there are 6 with no dists).
+
+    double n;
+    for (int i=0; i<_numStations; i++)
+    {
+        n = 0.0;
+        for (int j=0; j<_numStations; j++)
+            if (ntrips (i, j) > 0.0)
+                n += dists (i, j);
+        // This time only reset has_data for stations with dist data, but no
+        // ntrips (I don't think there are any of these).
+        if (n == 0.0 && has_data (i) == true)
+            has_data (i) = false;
+    }
 
     return 0;
 } // end function ClusterData::readNTrips

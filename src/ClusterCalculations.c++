@@ -113,17 +113,20 @@ int Clusters::allocateClusters (base_generator_type*  generator)
     for (int i=0; i<_numStations; i++) 
         clusterIDs (i) = INT_MIN;
     count [0] = _numStations;
+
     // Set up cluster centres. IDs have to run from one, because the london IDs
-    // have some NAs (missing station data), which are atoi'd as ID=0.
+    // have some NAs (missing station data), which are atoi'd as ID=0. Note that
+    // clusterIDs are 1-indexed here.
     for (int i=1; i<=numClusters; i++) 
     {
         tempi = floor (runif () * _numStations);
-        while (clusterIDs (tempi) > INT_MIN)
+        while (clusterIDs (tempi) > INT_MIN || !has_data (tempi))
             tempi = floor (runif () * _numStations);
         clusterIDs (tempi) = i;
         count [0]--;
     }
-    // The allocate the remaining points
+
+    // Then allocate the remaining points
     while (count [0] > 0) 
     {
         tempi = INT_MAX;
@@ -140,27 +143,28 @@ int Clusters::allocateClusters (base_generator_type*  generator)
                 this_cluster = i;
             }
         } // end for i
+
         // this_cluster then identifies the smallest cluster, with the following
         // lines finding all points that are closer to that cluster than to any
         // other.
         pt_list.resize (0);
         for (int i=0; i<_numStations; i++) 
-            if (clusterIDs (i) == INT_MIN) 
+            if (clusterIDs (i) == INT_MIN && has_data (i)) 
             {
                 tempd = DOUBLE_MAX; 
                 tempi = INT_MIN;
-                // The search for closest point to i that is in a cluster, and
+                // Then search for closest point to i that is in a cluster, and
                 // get cluster_num.
                 for (int j=0; j<_numStations; j++)
                     if (clusterIDs (j) > 0 && dists (i, j) < tempd) {
                         tempd = dists (i, j);
                         tempi = j;
                     }
-                // end for j - tempi is the closest point to i that is in a
-                // cluster.
+                // tempi is the closest point to i that is in a cluster.
                 if (clusterIDs (tempi) == this_cluster)
                     pt_list.push_back (i);
             }
+
         if (pt_list.size () == 0) // Then just select a random point
         { 
             tempi = floor (runif () * count [0]);
@@ -169,7 +173,7 @@ int Clusters::allocateClusters (base_generator_type*  generator)
             {
                 // This value has to be INT_MIN, because ID==0 can not be
                 // allocated.
-                if (clusterIDs (i) == INT_MIN) 
+                if (clusterIDs (i) == INT_MIN && has_data (i)) 
                     count [1]++;
                 if (count [1] == tempi) 
                 {
@@ -177,8 +181,9 @@ int Clusters::allocateClusters (base_generator_type*  generator)
                     break;
                 }
             }  // end for i
-            // tempi is then the random point not in a cluster, and is directly indexed
-            // into clusterIDs. The next lines find the nearest cluster.
+
+            // tempi is then the random point not in a cluster, and is directly
+            // indexed into clusterIDs. The next lines find the nearest cluster.
             dmin = DOUBLE_MAX;
             for (int i=0; i<_numStations; i++)
                 if (clusterIDs (i) > 0 && dists (tempi, i) < dmin) 
@@ -187,11 +192,13 @@ int Clusters::allocateClusters (base_generator_type*  generator)
                     nearest_in = i;
                     this_cluster = clusterIDs (i);
                 } // end if
-            // Then find point closest to nearest_in that is not in a cluster. This
-            // may or may not be the same as tempi above.
+
+            // Then find point closest to nearest_in that is not in a cluster.
+            // This may or may not be the same as tempi above.
             dmin = DOUBLE_MAX;
             for (int i=0; i<_numStations; i++)
-                if (clusterIDs (i) == INT_MIN && dists (nearest_in, i) < dmin) 
+                if (clusterIDs (i) == INT_MIN && has_data (i) &&
+                        dists (nearest_in, i) < dmin) 
                 {
                     dmin = dists (nearest_in, i);
                     tempi = i;

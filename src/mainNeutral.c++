@@ -142,7 +142,10 @@ int main(int argc, char *argv[])
     std::string method = "complete";
     Clusters clusters (city, method);
     std::cout << cityCaps << ": Number of stations = " << 
-        clusters.returnNumStations () << std::endl;
+        clusters.returnNumStations ();
+    if (clusters.nnoData > 0)
+        std::cout << " (but " << clusters.nnoData << " with no data.)";
+    std::cout << std::endl;
 
     std::string fname = city + "-results-neutral.txt";
     out_file.open (fname.c_str(), std::ios::out);
