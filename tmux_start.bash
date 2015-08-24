@@ -34,6 +34,7 @@ tmux send-keys -t $SESSION:3 'vim makefile' C-m
 tmux send-keys -t $SESSION:3 ':' 'tabe tmux_start.bash' C-m
 
 tmux split-window -h
+tmux send-keys -t $SESSION:3 "GD='https://github.com/mpadge/bike-clusters.git'" C-m
 tmux select-pane -t 0
 
 cd ./sortpart/R/

@@ -45,6 +45,8 @@
 
 #include "Utils.h"
 
+#include <boost/program_options.hpp>
+
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
@@ -61,31 +63,30 @@ class ClusterData
 {
     protected:
         bool _dir_to;
+        // final values need num_repeats = 10000 
+        const int _npts, _num_repeats;
         const std::string _dir = "./results/", _city, _method;
         std::string _fname;
     public:
-        // final values need num_repeats = 10000 
-        const int npts = 100, num_repeats = 100;
         bmat nbs;
         int numClusts;
         ivec clusterNumbers, numContig, numTot, cluster_ids, table;
         dmat distmat;
 
-        ClusterData (std::string citystr, bool dir, std::string methstr)
-            : _city (citystr), _dir_to (dir), _method (methstr)
+        ClusterData (std::string citystr, bool dir, std::string methstr,
+                int npts, int nrpts)
+            : _city (citystr), _dir_to (dir), _method (methstr),
+                _npts (npts), _num_repeats (nrpts)
         {
-            std::cout << "Usage: ./rhier city dir=(0/1) for (from/to) method" << 
-                std::endl <<
-                "\tdefaults: nyc 1 complete" << std::endl;
             _fname = _dir + _city + "-cluster-sizes.txt";
             readNumClusters ();
-            cluster_ids.resize (npts);
-            std::cout << "Calculating " << num_repeats << 
+            cluster_ids.resize (_npts);
+            std::cout << "Calculating " << _num_repeats << 
                 " random clusters for " << getCity ();
             if (_dir_to)
-                std::cout << " direction = TO: method = ";
+                std::cout << " direction = TO, method = ";
             else
-                std::cout << " direction = FROM: method = ";
+                std::cout << " direction = FROM, method = ";
             std::cout << _method << std::endl;
         }
         ~ClusterData ()
@@ -112,6 +113,13 @@ class ClusterData
                 base_generator_type *generator);
         void getTable ();
         void getdists (Points_with_id *pts);
+
+        int getNumPts () {
+            return _npts;
+        }
+        int getNumRepeats () {
+            return _num_repeats;
+        }
 }; // end class ClusterData
 
 #endif

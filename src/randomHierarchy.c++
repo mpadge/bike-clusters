@@ -54,59 +54,108 @@ int main (int argc, char *argv [])
 {
 
     bool dir_to;
-    int tempi = 0, dir_to_i;
+    int tempi, dir_to_i, npts, nrpts;
     double tempd, mn, sd, tt;
-    std::string fname, city = "nyc", method="complete";
+    std::string fname, city, method;
     std::ofstream out_file;
     time_t seed;
     base_generator_type generator(42u);
 
-    while (*++argv != NULL)
-    {
-        if (tempi < 1)
-        {
-            city = *argv;
-            std::transform (city.begin(), city.end(), city.begin(), ::tolower);
-            if (city.substr (0, 2) == "lo")
-                city = "london";
-            else if (city.substr (0, 2) == "bo")
-                city = "boston";
-            else if (city.substr (0, 2) == "ch")
-                city = "chicago";
-            else if (city.substr (0, 2) == "wa" || city.substr (0, 2) == "dc")
-                city = "washingtondc";
-            else
-                city = "nyc";
-        } else if (tempi < 2) {
-            dir_to_i = atoi (*argv);
-            if (dir_to_i == 0) 
-                dir_to = true;
-            else 
-                dir_to = false;
-        } else {
-            method = *argv;
-            std::transform (method.begin(), method.end(), method.begin(), 
-                    ::tolower);
-            std::cout << "---" << method << "---" << std::endl;
-            if (method.substr (0, 2) == "co")
-                method = "complete";
-            else
-                method = "k-means";
+    try {
+        boost::program_options::options_description generic("Generic options");
+        generic.add_options()
+            ("version,v", "print version std::string")
+            ("help", "produce help message")    
+            ;
+
+        boost::program_options::options_description config("Configuration");
+        config.add_options()
+            ("city,c", boost::program_options::value <std::string> 
+                (&city)->default_value ("nyc"), "city")
+            ("method,m", boost::program_options::value <std::string> 
+                (&method)->default_value ("complete"), "method")
+            ("dir_to,d", 
+                boost::program_options::value <int> (&dir_to_i)->default_value (0), 
+                 "direction to")
+            ("npts,p",
+                boost::program_options::value <int> (&npts)->default_value (100),
+                "number of points")
+            ("nrpts,r",
+                boost::program_options::value <int> (&nrpts)->default_value (100),
+                "number of repeats")
+            ;
+
+        // Not used here
+        boost::program_options::options_description hidden("Hidden options");
+        hidden.add_options()
+            ("hidden-option", boost::program_options::value
+                <std::vector<std::string> >(), "hidden option")
+            ;
+
+        boost::program_options::options_description cmdline_options;
+        cmdline_options.add(generic).add(config).add(hidden);
+
+        boost::program_options::options_description visible("Allowed options");
+        visible.add(generic).add(config);
+
+        boost::program_options::variables_map vm;
+        store(boost::program_options::command_line_parser(argc, argv).
+                options(cmdline_options).run(), vm);
+
+        notify(vm);
+
+        if (vm.count("help")) {
+            std::cout << visible << std::endl;
+            return 0;
         }
-        tempi++;
+
+        if (vm.count("version")) {
+            std::cout << "randomHierarchy, version 1.0" << std::endl;
+            return 0;
+        }
+
     }
+    catch(std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+        return 1;
+    }    
+
+    std::transform (city.begin(), city.end(), city.begin(), ::tolower);
+    if (city.substr (0, 2) == "lo")
+        city = "london";
+    else if (city.substr (0, 2) == "bo")
+        city = "boston";
+    else if (city.substr (0, 2) == "ch")
+        city = "chicago";
+    else if (city.substr (0, 2) == "wa" || city.substr (0, 2) == "dc")
+        city = "washingtondc";
+    else
+        city = "nyc";
+
+    if (dir_to_i == 0) 
+        dir_to = true;
+    else
+        dir_to = false;
+
+    std::transform (method.begin(), method.end(), method.begin(), 
+            ::tolower);
+    if (method.substr (0, 2) == "co")
+        method = "complete";
+    else
+        method = "k-means";
 
     //seed = atoi (argv [3]);
     generator.seed (static_cast <unsigned int> (seed));
 
-    ClusterData clusterData (city, dir_to, method);
+    ClusterData clusterData (city, dir_to, method, npts, nrpts);
 
     // Allocate the random points with CGAL in square with values in +/- first
     // argument, and size passed implicitly as npts.
     CGAL::Random_points_in_square_2<Point> g(1.0); // random points generator
     Points_with_id points;
     Delaunay tr;
-    for (int i=0; i<clusterData.npts; i++) 
+    for (int i=0; i<clusterData.getNumPts (); i++) 
     {
         points.push_back (std::make_pair (*g, i));
         g++;
@@ -121,7 +170,7 @@ int main (int argc, char *argv [])
     {
         mn = sd = 0.0;
         counts (i) = 0;
-        for (int j=0; j<clusterData.num_repeats; j++) 
+        for (int j=0; j<clusterData.getNumRepeats (); j++) 
         {
             int mincount = 0;
             while (mincount < 5) 
@@ -145,21 +194,21 @@ int main (int argc, char *argv [])
             if (tempi >= clusterData.numContig (i)) 
                 counts (i)++;
         } // end for j
-        mn = mn / (double) clusterData.num_repeats;
-        sd = sd / ((double) clusterData.num_repeats - 1.0) - mn * mn;
+        mn = mn / (double) clusterData.getNumRepeats ();
+        sd = sd / ((double) clusterData.getNumRepeats () - 1.0) - mn * mn;
         tt = (mn - (double) clusterData.numContig (i)) * 
-            sqrt ((double) clusterData.num_repeats) / sqrt (sd);
+            sqrt ((double) clusterData.getNumRepeats ()) / sqrt (sd);
 
         // Calculate cumulative probability:
         tempd = 1.0;
         for (int j=0; j<=i; j++)
             tempd = tempd * (double) counts (j) / 
-                (double) clusterData.num_repeats;
+                (double) clusterData.getNumRepeats ();
 
         std::cout << "[" << i << ", nc=" << clusterData.clusterNumbers (i) << 
             "]: contig = " << mn << " +/- " << sd << " / observed = " <<
             clusterData.numContig (i) << "; (N, p, p_cum) = (" << counts (i) <<
-            ", " << (double) counts (i) / (double) clusterData.num_repeats << 
+            ", " << (double) counts (i) / (double) clusterData.getNumRepeats () << 
             ", " << tempd << "); T = " << tt << std::endl;
     } // end for i
 
@@ -287,7 +336,7 @@ void ClusterData::allocateClusters (int num_clusters,
     double dmin, tempd;
     bool check;
     std::vector <int> pt_list;
-    cluster_ids.resize (npts);
+    cluster_ids.resize (_npts);
 
     boost::uniform_real <> uni_dist (0, 1);
     boost::variate_generator <base_generator_type&,
@@ -299,15 +348,15 @@ void ClusterData::allocateClusters (int num_clusters,
     for (int i=0; i<20; i++) 
         tempd = runif ();
 
-    for (int i=0; i<npts; i++) 
+    for (int i=0; i<_npts; i++) 
         cluster_ids (i) = INT_MIN;
-    count [0] = npts;
+    count [0] = _npts;
     // Set up cluster centres
     for (int i=0; i<num_clusters; i++) 
     {
-        tempi = floor (runif () * npts);
+        tempi = floor (runif () * _npts);
         while (cluster_ids (tempi) > INT_MIN)
-            tempi = floor (runif () * npts);
+            tempi = floor (runif () * _npts);
         cluster_ids (tempi) = i;
         count [0]--;
     }
@@ -320,7 +369,7 @@ void ClusterData::allocateClusters (int num_clusters,
         for (int i=0; i<num_clusters; i++) 
         {
             count [1] = 0;
-            for (int j=0; j<npts; j++)
+            for (int j=0; j<_npts; j++)
                 if (cluster_ids (j) == i) 
                     count [1]++;
             
@@ -334,14 +383,14 @@ void ClusterData::allocateClusters (int num_clusters,
         // lines finding all points that are closer to that cluster than to any
         // other.
         pt_list.resize (0);
-        for (int i=0; i<npts; i++)
+        for (int i=0; i<_npts; i++)
             if (cluster_ids (i) == INT_MIN) 
             {
                 tempd = 999999.0;
                 tempi = INT_MIN;
                 // The search for closest point to i that is in a cluster, and
                 // get cluster_num.
-                for (int j=0; j<npts; j++)
+                for (int j=0; j<_npts; j++)
                     if (cluster_ids (j) > INT_MIN && distmat (i, j) < tempd) {
                         tempd = distmat (i, j);
                         tempi = j;
@@ -356,7 +405,7 @@ void ClusterData::allocateClusters (int num_clusters,
         {
             tempi = floor (runif () * count [0]);
             count [1] = 0;
-            for (int i=0; i<npts; i++) 
+            for (int i=0; i<_npts; i++) 
             {
                 if (cluster_ids (i) == INT_MIN) 
                     count [1]++;
@@ -371,7 +420,7 @@ void ClusterData::allocateClusters (int num_clusters,
             // indexed into cluster_ids. The next lines find the nearest
             // cluster.
             dmin = 999999.9;
-            for (int i=0; i<npts; i++)
+            for (int i=0; i<_npts; i++)
                 if (cluster_ids (i) > INT_MIN && distmat (tempi, i) < dmin) 
                 {
                     dmin = distmat (tempi, i);
@@ -382,7 +431,7 @@ void ClusterData::allocateClusters (int num_clusters,
             // Then find point closest to nearest_in that is not in a cluster.
             // This may or may not be the same as tempi above.
             dmin = 999999.9;
-            for (int i=0; i<npts; i++)
+            for (int i=0; i<_npts; i++)
                 if (cluster_ids (i) == INT_MIN && 
                         distmat (nearest_in, i) < dmin) 
                 {
@@ -419,11 +468,11 @@ void ClusterData::getNeighbours (Points_with_id *points)
 
     Delaunay triangulation;
     triangulation.insert ((*points).begin (), (*points).end ());
-    nbs.resize (npts, npts);
-    for (int i=0; i<npts; i++) 
+    nbs.resize (_npts, _npts);
+    for (int i=0; i<_npts; i++) 
         nbs (i, i) = false;
-    for (int i=0; i<(npts - 1); i++)
-        for (int j=(i+1); j<npts; j++) 
+    for (int i=0; i<(_npts - 1); i++)
+        for (int j=(i+1); j<_npts; j++) 
             nbs (i, j) = false;
 
     for(Delaunay::Finite_faces_iterator fit = triangulation.finite_faces_begin();
@@ -478,9 +527,9 @@ int ClusterData::getContiguousClusters (Points_with_id *pts,
         for (int j=(i+1); j<nnew; j++) 
         {
             check = false;
-            for (int k=0; k<npts; k++)
+            for (int k=0; k<_npts; k++)
                 if (cluster_ids (k) == clustIdsTemp [i])
-                    for (int m=0; m<npts; m++)
+                    for (int m=0; m<_npts; m++)
                         if (nbs (k, m) && cluster_ids (m) == clustIdsTemp [j]) 
                         {
                             if (!check) 
@@ -512,7 +561,7 @@ void ClusterData::getTable ()
 {
     int maxc = 0;
 
-    for (int i=0; i<npts; i++)
+    for (int i=0; i<_npts; i++)
         if (cluster_ids (i) > maxc)
             maxc = cluster_ids (i);
 
@@ -520,7 +569,7 @@ void ClusterData::getTable ()
     for (int i=0; i<maxc; i++) 
         table (i) = 0;
 
-    for (int i=0; i<npts; i++)
+    for (int i=0; i<_npts; i++)
         table (cluster_ids (i))++;
 }; // end function table
 
@@ -536,17 +585,17 @@ void ClusterData::getTable ()
 void ClusterData::getdists (Points_with_id *pts)
 {
     double x [2], y [2];
-    distmat.resize (npts, npts);
+    distmat.resize (_npts, _npts);
 
     // points can then be accessed by .first, which has [0:1] for (x,y), and
     // .second, which is the ID number
-    for (int i=0; i<npts; i++) 
+    for (int i=0; i<_npts; i++) 
         distmat (i, i) = 0.0;
-    for (int i=0; i<(npts - 1); i++) 
+    for (int i=0; i<(_npts - 1); i++) 
     {
         x [0] = (*pts) [i].first [0];
         y [0] = (*pts) [i].first [1];
-        for (int j=(i+1); j<npts; j++) 
+        for (int j=(i+1); j<_npts; j++) 
         {
             x [1] = (*pts) [j].first [0] - x [0];
             y [1] = (*pts) [j].first [1] - y [0];

@@ -1,8 +1,8 @@
 if [[-z "$CXX"]]; then CXX='c++'
 CXX=clang++-3.5
-CFLAGS=-c -std=c++11
+CFLAGS=-c -std=c++11 
 LIBS=
-RHLIBS=-lCGAL -lgmp
+RHLIBS=-lCGAL -lgmp -lboost_program_options
 VPATH=./src
 OBJECTS_NEUTRAL = ClusterData.o Utils.o ClusterCalculations.o mainNeutral.o
 OBJECTS_ACTUAL = ClusterData.o Utils.o ClusterCalculations.o mainActual.o
