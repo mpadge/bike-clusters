@@ -68,12 +68,28 @@ get.num.clusts <- function (city="nyc", method="complete")
                            which (x < p0)
                 })
         mini <- sapply (mini, max)
+
+        if (city == "nyc")
+            mini [1] <- max (which (dat [,1] < 0.1))
     }
     dat.mini <- mapply (function (x, i) x[i], x=dat, i=mini)
     nc.mini <- mapply (function (x, i) x[i], x=nc, i=mini)
 
-    results <- data.frame (cbind (index [mini], nc.mini, dat.mini))
-    names (results) <- c ("num.pks", "num.clusts", "pmin")
+    # Then get cluster diameters
+    diams <- rep (NA, 4)
+    ttxt <- c ("to", "from")
+    for (i in 1:2)
+    {
+        fname <- paste (wd, city, "-clust-", ttxt [i], 
+                        "-diameters-complete.txt", sep="")
+        dtemp <- read.csv (fname, header=FALSE)
+        dtemp <- as.numeric (rowMeans (dtemp, na.rm=TRUE))
+        diams [i * 2 - 1] <- dtemp [nc.mini [i * 2 - 1]]
+    }
+    
+
+    results <- data.frame (cbind (index [mini], nc.mini, dat.mini, diams))
+    names (results) <- c ("num.pks", "num.clusts", "pmin", "diam")
     rownames (results) <- c ("to-h", "to-k", "from-h", "from-k")
     return (results)
 } # end function get. num.clusts

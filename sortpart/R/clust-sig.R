@@ -249,18 +249,12 @@ clust.sig <- function (city="nyc", method="complete", rescale=2)
         pk.depth <- apply (pks2, 1, function (z) {
                 mean (dfr$y [z [1:2]]) - dfr$y [z [3]]  })
         gvals <- diff (xdat [pks])
-        g <- mean (gvals)
         svals <- 1 / log (e1 * gvals / (e1 - 1))
-        s <- mean (svals)
         nstars <- length (pks) * 3 + 46
         cat (rep ("*", nstars), "\n", sep="")
         cat ("********** T-VALUE PEAKS", ttxt [i], "=", 
              xdat [pks], " **********\n")
         cat (rep ("*", nstars), "\n", sep="")
-        cat ("\tG = ", formatC (g, format="f", digits=3), " +/- ",
-             formatC (sd (gvals), format="f", digits=3), "; s = ",
-             formatC (s, format="f", digits=3), " +/- ",
-             formatC (sd (svals), format="f", digits=3), "\n", sep="")
 
         # Analyse partition hierarchy. part.sizes are the sums of sizes of all
         # new partitions regardless of where they are; part.sizesC is same but
@@ -351,6 +345,25 @@ clust.sig <- function (city="nyc", method="complete", rescale=2)
             #} # end else nfrac, mfrac > 0.5
         } # end for j
         cat (rep ("-", 105), "\n", sep="")
+
+        # Then reduce lists of mvals and part.sizes to only those below which M
+        # represents at least half of the new partitions:
+        im <- which (mvals / mvals.all < 0.5)
+        if (length (im) > 0)
+        {
+            im <- 1:(im [1] - 1)
+            mvals <- mvals [im]
+            mvals.all <- mvals.all [im]
+            part.sizes <- part.sizes [im]
+            part.sizesC <- part.sizesC [im]
+            pks <- pks [c (im, max (im) + 1)]
+        }
+        gvals <- diff (xdat [pks])
+        svals <- 1 / log (e1 * gvals / (e1 - 1))
+        cat ("\tG = ", formatC (mean (gvals), format="f", digits=3), " +/- ",
+             formatC (sd (gvals), format="f", digits=3), "; s = ",
+             formatC (mean (svals), format="f", digits=3), " +/- ",
+             formatC (sd (svals), format="f", digits=3), "\n", sep="")
 
         # construct lists of nm values to be dumped to file for subsequent
         # analysis in C++ randomHierarchies

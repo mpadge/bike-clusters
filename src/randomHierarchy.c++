@@ -42,7 +42,7 @@
 
 #include "randomHierarchy.h"
 
-/**********************************************************************
+/************************************************************************
  ************************************************************************
  **                                                                    **
  **                         MAIN FUNCTION                              **
@@ -57,7 +57,6 @@ int main (int argc, char *argv [])
     int tempi, dir_to_i, npts, nrpts;
     double tempd, mn, sd, tt;
     std::string fname, city, method;
-    std::ofstream out_file;
     time_t seed;
     base_generator_type generator(42u);
 

@@ -54,15 +54,8 @@ get.partition.neighbours <- function (city="nyc", method="complete",
     else 
         diri <- 2
 
-    wd0 <- getwd ()
-    wd <- ""
-    while (!"bike-correlations" %in% list.files ("."))
-    {
-        wd <- paste (wd, "../", sep="")
-        setwd ("../")
-    }
-    setwd (wd0)
-    wd <- paste (wd, "bike-correlations/data/", sep="")
+    cordir <- "/data/Dropbox/mark/analyses/bike-correlations/"
+    wd <- paste (cordir, "data/", sep="")
 
     if (city == "nyc" | city == "london" | city == "washingtondc")
     {

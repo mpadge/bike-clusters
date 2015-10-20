@@ -41,19 +41,9 @@ get.members <- function (city="nyc", nc=8, method="complete", details=FALSE,
     else if (method == "k")
         method <- "k-means"
     
-    wd0 <- getwd ()
-    count <- 0
-    wdd <- wdr <- ""
-    while (!"bike-correlations" %in% list.files ("."))
-    {
-        wdd <- paste (wdd, "../", sep="")
-        wdr <- paste (wdr, "../", sep="")
-        setwd ("../")
-        count <- count + 1
-    }
-    setwd (wd0)
-    wdd <- paste (wdd, "bike-correlations/data/", sep="")
-    wdr <- paste (wdr, "bike-correlations/results/", sep="")
+    cordir <- "/data/Dropbox/mark/analyses/bike-correlations/"
+    wdd <- paste (cordir, "data/", sep="")
+    wdr <- paste (cordir, "results/", sep="")
 
     if (city == "nyc" | city == "london" | city == "washingtondc")
     {
