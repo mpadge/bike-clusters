@@ -30,3 +30,12 @@ except skater only up to 50).
 7. `>/randomClusters` city direction (0/1)
 
 See `aaaread-this` for further details.
+
+### build:
+1. cd ./build  
+2. cmake ..  
+3. make
+
+
+[![Build
+Status](https://travis-ci.org/mpadge/bike-clusters.svg?branch=master)](https://travis-ci.org/mpadge/bike-clusters)

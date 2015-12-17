@@ -118,6 +118,7 @@ get.members <- function (city="nyc", nc=8, method="complete", details=FALSE,
         }
 
         nc.add <- nc.temp <- 0 # nc.temp is observed value after reallocation
+        reallocs <- NULL
         while (nc.temp < nc & (nc + nc.add) < length (nbs)) {
             if (method == "k-means") {
                 km <- kmeans (as.dist (dmat), centers = nc + nc.add, 
@@ -134,6 +135,7 @@ get.members <- function (city="nyc", nc=8, method="complete", details=FALSE,
                                else { nlist = NULL  }
                                return (nlist) })
             non.nbs <- unlist (non.nbs)
+            reallocs <- c (reallocs, non.nbs)
 
             # Then reallocate those points to the neighbourhing cluster with
             # minimal dmat. 
@@ -151,6 +153,11 @@ get.members <- function (city="nyc", nc=8, method="complete", details=FALSE,
             nc.temp <- length (unique (membs [[i]]))
             if (nc.temp < nc) { nc.add <- nc.add + 1    }
         } # end while nc.temp < nc
+        reallocs <- unique (reallocs)
+        if (details)
+            cat ("Re-allocated ", length (reallocs), " / ",
+                 npts, " = ", round (100 * length (reallocs) / npts),
+                 "% of points.\n", sep="")
 
         if (nc.add > 0) { # Then renumber clusters to within nc0
             tb <- table (membs [[i]])

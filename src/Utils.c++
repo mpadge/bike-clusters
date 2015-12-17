@@ -14,7 +14,7 @@
  *  more details.
  *
  *  You should have received a copy of the GNU General Public License along with
- *  NeutralClusters.  If not, see <http://www.gnu.org/licenses/>.
+ *  BikeClusters.  If not, see <http://www.gnu.org/licenses/>.
  *
  *  Copyright   Mark Padgham July 2015
  *  Author:     Mark Padgham

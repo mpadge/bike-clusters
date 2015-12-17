@@ -236,6 +236,16 @@ clust.sig <- function (city="nyc", method="complete", rescale=2)
             #pdfr <- within (pdfr, y <- predict (mod, newdata=pdfr))
         } # end for j
         dfr$y <- 2 * (dfr$y - ulbounds [,2]) / (ulbounds [,1] - ulbounds [,2]) - 1
+        # Next line discerns peak positions from re-scaled T-values. This yields
+        # many more peaks, and Delta G values that are sometimes less than 3,
+        # which is obviously not realistic.
+        #pks <- which (diff (sign (diff (dfr$y))) == -2) + 1
+        # There is also an artifical adjustment for DC, because the first peaks
+        # from raw T-values for from--data are (9,17,24), with corresponding
+        # N=(13,14). There are actually two intermediate peaks that aren't quite
+        # local maxima, so these are artifically inserted here:
+        if (city == "washingtondc" & i == 3)
+            pks <- c (8,12,16,21, pks [3:length (pks)])
 
         # Then the actual calculations using the nlrq-rescaled T-values stored
         # as dfr. First join two columns of adjacent peaks, along with the
