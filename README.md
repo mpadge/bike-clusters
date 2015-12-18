@@ -39,3 +39,5 @@ See `aaaread-this` for further details.
 
 [![Build
 Status](https://travis-ci.org/mpadge/bike-clusters.svg?branch=master)](https://travis-ci.org/mpadge/bike-clusters)
+
+Build fails because of CGAL/Exact_predicates!
