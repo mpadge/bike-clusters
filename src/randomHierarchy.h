@@ -40,15 +40,15 @@
  ***************************************************************************/
 
 
+#include "Utils.h"
+
 #ifndef RHIER_H
 #define RHIER_H
 
-#include "Utils.h"
-
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Delaunay_triangulation_2.h>
-#include <CGAL/Triangulation_vertex_base_with_info_2.h>
-#include <CGAL/point_generators_2.h>
+#include "CGAL/Exact_predicates_inexact_constructions_kernel.h"
+#include "CGAL/Delaunay_triangulation_2.h"
+#include "CGAL/Triangulation_vertex_base_with_info_2.h"
+#include "CGAL/point_generators_2.h"
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel            Kernel;
 typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned int, Kernel> Vb;
