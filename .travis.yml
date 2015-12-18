@@ -13,25 +13,16 @@ before_install:
 
 install: 
     - sudo apt-get install libboost-dev libboost-program-options-dev
-      #- sudo apt-get install libcgal-dev libgmp3-dev
-    - sudo apt-get install libgmp3-dev cmake
+    - sudo apt-get install libgmp3-dev libcgal*
     # The next 4 lines download the CGAL tarball, but this requires cmake
-    # 2.8.11, yet travis has only 2.8.7
-    - wget https://github.com/CGAL/cgal/releases/download/releases%2FCGAL-4.7/CGAL-4.7.tar.gz
-    - tar -xzvf CGAL-4.7.tar.gz
-    - cd CGAL-4.7
-    - cmake .
+    # 2.8.11, yet travis has only 2.8.7, so this can't be used
+    #- wget https://github.com/CGAL/cgal/releases/download/releases%2FCGAL-4.7/CGAL-4.7.tar.gz
+    #- tar -xzvf CGAL-4.7.tar.gz
+    #- cd CGAL-4.7
+    #- cmake .
       # force g++ compiler versions, but this is not necessary for clang
     - if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.8; fi
     - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8"; fi
-
-#env:
-#    global:
-#        CGAL_GYP_LDFLAGS: -L$TRAVIS_BUILD_DIR/CGAL-4.4/lib
-#        CGAL_GYP_INCLUDES: $TRAVIS_BUILD_DIR/CGAL-4.4/include
-#        matrix:
-#            -
-#            - GGAL_USE_EPECK=1
 
 script: 
     - cd ./build
