@@ -19,13 +19,13 @@ install:
     - if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.8; fi
     - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8"; fi
 
-env:
-    global:
-        CGAL_GYP_LDFLAGS: -L$TRAVIS_BUILD_DIR/CGAL-4.4/lib
-        CGAL_GYP_INCLUDES: $TRAVIS_BUILD_DIR/CGAL-4.4/include
-        matrix:
-            -
-            - GGAL_USE_EPECK=1
+#env:
+#    global:
+#        CGAL_GYP_LDFLAGS: -L$TRAVIS_BUILD_DIR/CGAL-4.4/lib
+#        CGAL_GYP_INCLUDES: $TRAVIS_BUILD_DIR/CGAL-4.4/include
+#        matrix:
+#            -
+#            - GGAL_USE_EPECK=1
 
 script: 
     - cd ./build
